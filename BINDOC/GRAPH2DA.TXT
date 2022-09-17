@@ -22,11 +22,6 @@ GRAPH2DA DATA.PCG
 
 ◎			CALL:B:DATA.PCG TYPE:B:TEXT.DOC
 
-
-●その他
-
-このソフトは無保証のフリーソフトウェアです。著作権は破棄していませんが転載・配布は自由です。
-
 ●History
 
 1.00	1995. 8.20	新規作成
