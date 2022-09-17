@@ -1,6 +1,6 @@
    L-os Angeles Gaku (Tablacus/Lovers)  
    Ok  
-   ;         A:LA      .SYS	X1版　L-os Angeles  
+   ;         [A:LA      .SYS	X1版　L-os Angeles](https://github.com/tablacus/LSX-Dodgers/releases)  
    ;         [A:LA      .   	LAの外部コマンド](https://github.com/tablacus/LosAngeles/tree/main/LA)  
    ;         [A:LADOC   .   	LAの解説](https://github.com/tablacus/LosAngeles/tree/main/LADOC)  
    ;         [A:BINDOC  .   	LAの外部コマンドの解説](https://github.com/tablacus/LosAngeles/tree/main/BINDOC)  
@@ -9,7 +9,7 @@
    ;         [A:LAIPL   .   	IPLのソースリスト](https://github.com/tablacus/LosAngeles/tree/main/LAIPL)  
    ;         A:COMMAND .BAT	LAの自動実行ファイル  
    ;         A:LA      .COM	X1・C-DOSII等からLAを起動させるコマンド  
-   ;         A:LAE     .COM	MSX-DOS版　L-os Angeles  
+   ;         [A:LAE     .COM	MSX-DOS版　L-os Angeles](https://github.com/tablacus/LSX-Dodgers/releases)  
 
 
 # プログラム名	
