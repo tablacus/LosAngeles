@@ -1,0 +1,337 @@
+;
+;	DRIVE
+;
+	$INCLUDE	LA.DEF
+;
+	OFFSET	$C000-$3000
+	ORG	$3000
+;
+	LD	A,$1A
+	CALL	#PRINT
+	LD	A,(#MAXDRV)
+	LD	B,A
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"-"
+	JR	Z,SW
+	CP	"/"
+	JR	NZ,MAIN
+SW:
+	INC	DE
+	LD	A,(DE)
+	INC	DE
+	CALL	#CAP
+	CP	"C"
+	JP	Z,DRVC
+	JP	USAGE
+MAIN:
+	CALL	#CAP
+	LD	(DRV1),A
+	CALL	PARA
+	JR	C,DRIVE0
+	INC	DE
+	CALL	#SPSK
+	LD	A,(DE)
+	CALL	#CAP
+	LD	(DRV2),A
+	CALL	PARA
+	JR	C,DRIVE1
+	JP	DRIVE2
+;
+DRIVE0:
+	LD	A,(#MAXDRV)
+	LD	B,A
+	LD	C,"A"
+;
+DP1:
+	CALL	DRV
+;
+	CALL	#PAUSE
+	DW	BREAK
+;
+	INC	C
+	DJNZ	DP1
+BREAK:
+	AND	A
+	RET
+;
+DRIVE1:
+	LD	A,(DRV1)
+	CALL	#CHGDRV
+	JR	C,DRIVE0
+	LD	C,A
+	CALL	DRV
+;
+	CALL	#RDFAT
+	CALL	#MOTOFF
+	CALL	#MPRNT
+	DB	    "1 ¾¸À ±ÀØ É ÊÞ²Ä ½³.....",0
+	LD	HL,1024
+	LD	A,(IY+$07)
+	OR	A
+	JR	Z,DBL1
+	LD	HL,512
+DBL1:
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"1 ¸×½À ±ÀØ É ¾¸À ½³.....",0
+	LD	HL,1
+	LD	A,(IY+$07)
+	OR	A
+	JR	Z,DBL2
+	INC	L
+DBL2:
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"¿³ ¸×½À ½³..............",0
+	LD	L,(IY+$08)
+	LD	H,(IY+$09)
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"Ì§²Ù±Û¹°¼®Ý É ¾ÝÄ³ ¾¸À..",0
+	LD	L,(IY+$0E)
+	LD	H,0
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"Ì§²Ù±Û¹°¼®Ý É ¸×½À ½³...",0
+	LD	L,(IY+$00)
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"Ù°ÄÃÞ¨Ú¸ÄØ É ¾ÝÄ³ ¾¸À...",0
+	LD	L,(IY+$10)
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"Ù°ÄÃÞ¨Ú¸ÄØ É »²ÀÞ² º½³..",0
+	LD	A,(IY+$0B)
+	SUB	L
+	LD	L,A
+	LD	A,(IY+$07)
+	OR	A
+	JR	NZ,DBL3
+	ADD	HL,HL
+DBL3:
+	ADD	HL,HL
+	ADD	HL,HL
+	ADD	HL,HL
+	ADD	HL,HL
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	$0D,"ÃÞ°ÀØ®³²· É ¾ÝÄ³ ¾¸À....",0
+	LD	L,(IY+$06)
+	LD	H,0
+	INC	HL
+	INC	HL
+	LD	A,(IY+$07)
+	OR	A
+	JR	Z,DBL4
+	INC	HL
+	INC	HL
+DBL4:
+	CALL	#PRTHLX
+	CALL	#LTNL
+	AND	A
+	RET
+;
+DRIVE2:
+	LD	A,(DRV1)
+	CALL	#DEVAD2
+	PUSH	IY
+	POP	HL
+	PUSH	HL
+	LD	DE,TEMP
+	LD	BC,32
+	LDIR
+	LD	A,(DRV2)
+	CALL	#DEVAD2
+	PUSH	IY
+	POP	HL
+	POP	DE
+	PUSH	HL
+	LD	BC,32
+	LDIR
+	POP	DE
+	LD	HL,TEMP
+	LD	BC,32
+	LDIR
+;
+	CALL	PRTDV
+	LD	A,(DRV1)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": Ä ÄÞ×²ÌÞ ",0
+	LD	A,(DRV2)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": ¦ ²Ú¶´Ï¼À¡",$0D,0
+;
+	CALL	#RDVSW
+	CALL	#CAP
+;
+	LD	HL,DRV1
+	CP	(HL)
+	LD	HL,DRV2
+	JR	Z,SAME
+	LD	HL,DRV2
+	CP	(HL)
+	LD	HL,DRV1
+	JR	Z,SAME
+;
+RET2:
+	JP	DRIVE0
+;
+SAME:
+	PUSH	AF
+	CALL	#MPRNT
+	DB	" ¶ÚÝÄ  ",0
+	POP	AF
+	CALL	PRTODV
+	LD	A,(HL)
+	CALL	#SDVSW
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": Æ ·Ø¶´Ï¼À¡",$0D,0
+	JR	RET2
+;
+DRV:
+	LD	A,C
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	': ',0
+	LD	A,C
+	CALL	#DEVAD2
+	JR	C,DP3
+	PUSH	IY
+	POP	HL
+	LD	DE,28
+	ADD	HL,DE
+	LD	E,3
+DP2:
+	LD	A,(HL)
+	INC	HL
+	CALL	#PRINT
+	DEC	E
+	JR	NZ,DP2
+	LD	A,(HL)
+	CP	'0'
+	CCF
+	JR	NC,DP4
+	CP	'9'+2
+DP4:
+	CALL	NC,#PRINT
+	CALL	#MPRNT
+	DB	9,"unit no.",0
+	LD	A,(IY+$13)
+	CALL	#PRTHX
+DP3:
+	JP	#LTNL
+;
+DRVC:
+	CALL	#SPSK
+	LD	A,(DE)
+	CALL	#CAP
+	LD	(DRV1),A
+	CALL	#CHGDRV
+	JP	C,USAGE
+	CALL	PARA
+	JP	C,USAGE
+	INC	DE
+	CALL	#SPSK
+	LD	A,(DE)
+	CALL	#CAP
+	LD	(DRV2),A
+	CALL	PARA
+	JP	C,USAGE
+;
+	LD	A,(DRV2)
+	CALL	#DEVADX
+	CALL	NC,CHECK
+	RET	NC
+DRVCX:
+	PUSH	IY
+	POP	DE
+	CALL	#DEVADR
+	PUSH	IY
+	POP	HL
+	LD	BC,32
+	LDIR
+;
+	CALL	PRTDV
+	LD	A,(DRV1)
+	CALL	PRTODV
+	LD	A,(DRV2)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": Æ ºËß°¼Ï¼À¡",$0D,0
+	JP	DRIVE0
+;
+CHECK:
+	CALL	PRTDV
+	LD	A,(DRV2)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	":Ê ",0
+	LD	A,(IY+$1C)
+	CALL	#PRINT
+	LD	A,(IY+$1D)
+	CALL	#PRINT
+	LD	A,(IY+$1E)
+	CALL	#PRINT
+	LD	A,(IY+$1F)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	"Ä¼Ã ¼Ö³»ÚÃ²Ï½¡",$0D
+	DB	"ÍÝº³¼ÃÓ ÖÛ¼²ÃÞ½¶? (Y/other):",0
+	CALL	#FLGET
+	CALL	#CAP
+	CP	'Y'
+	JR	Z,SURE1
+	CP	'Ý'
+	JR	Z,SURE1
+;
+	CALL	#MPRNT
+	DB	'No.',$0D,0
+	AND	A
+	RET
+;
+SURE1:	CALL	#MPRNT
+	DB	"Yes.",$0D,0
+	SCF
+	RET
+;
+PARA:
+	SUB	"A"
+	RET	C
+	CP	B
+	CCF
+	RET	C
+	INC	DE
+	LD	A,(DE)
+	CP	":"
+	RET	Z
+	SCF
+	RET
+PRTDV:
+	CALL	#MPRNT
+	DB	"ÄÞ×²ÌÞ ",0
+	RET
+;
+PRTODV:
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": ¦ ÄÞ×²ÌÞ ",0
+	RET
+USAGE:
+	CALL	#MPRNT
+	DB	"drive v1.03 Lovers",$0D
+	DB	"usage:",$0D
+	DB	" DRIVE [½²¯Á] [drv1:[ drv2:]]",$0D
+	DB	$0D
+	DB	9,"/C drive copy",$0D
+	DB	0
+	AND	A
+	RET
+;
+DRV1:	DB	0
+DRV2:	DB	0
+TEMP:			;	DS	32
+

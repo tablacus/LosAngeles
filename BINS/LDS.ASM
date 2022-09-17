@@ -1,0 +1,70 @@
+;
+;	LDS.BIN		Gaku Nakagawa
+;
+	$INCLUDE	LA.DEF
+
+	ORG	$3000
+
+	XOR	A
+	CALL	#2HEX
+	LD	(LEVEL),A
+
+	CALL	#MPRNT
+	DB	"lds v1.00 Lovers",$0D
+	DB	0
+
+	LD	A,(DE)
+	CP	"-"
+	JP	Z,USAGE
+	CP	"/"
+	JP	Z,USAGE
+
+	LD	DE,LDFN
+	CALL	#FILED
+	RET	C
+	CALL	#ROPEN
+	RET	C
+	LD	HL,DATA
+	LD	(#DTADR),HL
+	CALL	#RDD
+	RET	C
+
+	LD	A,(DATA)
+	CP	$FE
+	RET	NZ
+
+	DI
+	LD	HL,(DATA+3)
+	LD	DE,(DATA+1)
+	PUSH	DE
+	XOR	A
+	SBC	HL,DE
+	INC	HL
+	LD	B,H
+	LD	C,L
+	POP	DE
+	LD	HL,DATA+7
+	LDIR
+
+	CALL	#RDVSW
+	SUB	"A"
+	LD	($FF87),A
+	LD	A,(LEVEL)
+	LD	($ED8C),A
+	LD	HL,(DATA+5)
+	JP	(HL)
+
+USAGE:
+	CALL	#MPRNT
+	DB	"usage:",$0D
+	DB	" LDS [EMM´Ø±(0-FF)]",$0D
+	DB	0
+	XOR	A
+	RET
+
+LDFN:
+	DB	"LD.BIN",0
+LEVEL:
+	DB	0
+DATA:
+

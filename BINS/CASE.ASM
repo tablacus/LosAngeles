@@ -1,0 +1,274 @@
+;
+;	TOUCH by Larn M.R.
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+;
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	$21
+	JP	C,USAGE
+;
+SW1:
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"-"
+	JR	Z,SWI
+	CP	"/"
+	JP	NZ,MAIN
+SWI:
+	INC	DE
+SWX:
+	LD	A,(DE)
+	CALL	#CAP
+	INC	DE
+	CP	"Q"
+	JR	NZ,SW4
+	LD	(SW_Q+1),A
+	JR	SWE
+SW4:
+	CP	"D"
+	JR	NZ,SW5
+	LD	(SW_D+1),A
+	JR	SWE
+SW5:
+	CP	"V"
+	JR	NZ,SW6
+	LD	(SW_V+1),A
+	JR	SWE
+SW6:
+	CP	"L"
+	JR	NZ,SW7
+	LD	(SW_L+1),A
+	JR	SWE
+SW7:
+	CP	"U"
+	JR	NZ,SW8
+	XOR	A
+	LD	(SW_L),A
+	JR	SWE
+SW8:
+	JP	USAGE
+SWE:
+	LD	A,(DE)
+	CP	$21
+	JP	C,SW1
+	JP	SWX
+;
+MAIN:
+	CALL	#FILE
+	JP	C,USAGE
+	LD	IX,(#IBFAD)
+	LD	A,(IX+1)
+	CP	$20
+	LD	DE,DIRW
+	CALL	Z,#FILED
+	LD	A,(#WILD)
+	LD	A,$1A
+	CALL	NZ,#PRINT
+;
+	CALL	#RDFAT
+	CALL	#MOTOFF
+	CALL	NC,#SOPENX
+MAIN2:
+	JP	C,#RCLOSE
+;
+	PUSH	HL
+	POP	IY
+;
+	CALL	PAUSE
+;
+	LD	B,(IY+$0B)
+	LD	A,B
+	AND	7		;shr
+	JP	NZ,MAIN7
+;
+SW_D:	LD	A,$00
+	OR	A
+	JR	NZ,CSW1
+	BIT	4,B
+	JP	NZ,MAIN7
+CSW1:
+SW_V:	LD	A,$00
+	OR	A
+	JR	NZ,CSW2
+	BIT	3,B
+	JP	NZ,MAIN7
+CSW2:
+SW_Q:	LD	L,$00
+	LD	A,(#WILD)
+	OR	L
+	JR	Z,MAIN5
+	LD	HL,(#FBAD)
+	CALL	#NFPRT
+	CALL	#PRNTS
+	LD	A,(SW_Q+1)
+	OR	A
+	JR	Z,MAIN5
+	CALL	#MPRNT
+	DB	"<y/n>?",0
+	CALL	SURE
+	CALL	C,#LTNL
+	JR	C,MAIN7
+	CALL	#PRNTS
+MAIN5:
+	PUSH	IY
+	POP	HL
+	LD	B,8+3
+	CALL	CONV
+	INC	HL
+	LD	B,10
+	CALL	CONV
+;
+	CALL	#WTDIR
+	CALL	#MOTOFF
+	RET	C
+MAIN6:
+	CALL	#MPRNT
+	DB	"Ok",$0D,0
+MAIN7:
+	LD	A,(#WILD)
+	OR	A
+	RET	Z
+	CALL	#NOPENX
+	JP	MAIN2
+;
+QUIT:
+	POP	AF
+	CALL	#RCLOSE
+	XOR	A
+	RET
+;
+HLDEC:
+	CALL	#SPSK
+	CALL	DEC
+	RET	C
+	LD	L,A
+	INC	DE
+HLDEC1:
+	CALL	DEC
+	CCF
+	RET	NC
+	LD	H,A
+	LD	A,L
+HLDEC2:
+	CP	10
+	JR	C,HLDEC3
+	SUB	10
+	JR	HLDEC2
+HLDEC3:
+	LD	L,A
+	ADD	A,A
+	ADD	A,A
+	ADD	A,L
+	ADD	A,A
+	ADD	A,H
+	LD	L,A
+	INC	DE
+	JR	HLDEC1
+DEC:
+	LD	A,(DE)
+	SUB	"0"
+	RET	C
+	CP	10
+	CCF
+	RET
+;
+HLDECX:
+	CALL	HLDEC
+	JR	C,HLDECE
+	LD	A,(DE)
+	INC	DE
+	CP	"-"
+	RET	Z
+	CP	"/"
+	RET	Z
+	CP	":"
+	RET	Z
+HLDECE:
+	POP	AF
+	XOR	A
+;
+PAUSE:
+	CALL	#BRKEY
+	JP	Z,#HOT
+	CALL	#GETKY
+	CP	$20
+	RET	NZ
+	LD	(SW_Q+1),A
+	RET
+;
+SURE:			;Yes CF=0 , No CF=1
+	CALL	#KYBFC
+	CALL	#FLGET
+	CALL	#CAP
+	CP	"A"
+	JR	Z,ALL
+	CP	"Á"
+	JR	Z,ALL
+	CP	"Y"
+	JR	Z,YES
+	CP	"Ý"
+	JR	Z,YES
+	CP	"N"
+	JR	Z,NO
+	CP	"Ð"
+	JR	Z,NO
+	CP	3
+	JR	Z,BREAK
+	CP	$1B
+	JR	NZ,SURE
+BREAK:
+	CALL	#LTNL
+	JP	#HOT
+ALL:
+	XOR	A
+	LD	(SW_Q+1),A
+YES:
+	LD	A,"y"
+PRTYN:
+	JP	#PRINT
+NO:
+	LD	A,"n"
+	SCF
+	JR	PRTYN
+;
+CONV:
+	LD	A,(HL)
+	CALL	#CAP
+SW_L:	LD	C,$00
+	INC	C
+	DEC	C
+	CALL	NZ,LOWER
+	LD	(HL),A
+	INC	HL
+	DJNZ	CONV
+	RET
+LOWER:
+	CP	"A"
+	RET	C
+	CP	"Z"+1
+	RET	NC
+	OR	$20
+	RET
+;
+USAGE:
+	CALL	#MPRNT
+	DB	"case v1.00"
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" CASE [½²¯Á] [Ì§²ÙÈ°Ñ]",$0D
+	DB	$0D
+	DB	9,"/U µµÓ¼Þ(ÃÞÌ«ÙÄ)",$0D
+	DB	9,"/L ºÓ¼Þ",$0D
+	DB	9,"/D ÃÞ¨Ú¸ÄØ",$0D
+	DB	9,"/V ÎÞØ­°Ñ×ÍÞÙ",$0D
+	DB	9,"/Q ¶¸ÆÝ",$0D
+	DB	0
+	AND	A
+	RET
+;
+DIRW:	DB	"*.*",0
+

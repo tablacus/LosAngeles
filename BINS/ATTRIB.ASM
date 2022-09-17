@@ -1,0 +1,200 @@
+;
+;	ATTRIB
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	LD	IX,SET
+ATTR:
+	CALL	#SPSK
+	LD	A,(DE)
+	INC	DE
+	CP	'+'
+	JR	Z,ATTR1
+	CP	'-'
+	JR	Z,ATTR2
+	DEC	DE
+	CALL	#FILE
+	LD	HL,(#IBFAD)
+	INC	HL
+	LD	A,(HL)
+	CP	$20
+	JP	Z,USAGE
+	JP	SET1
+;
+ATTR1:
+	CALL	ATTRS
+	JR	NZ,ATR1
+	SET	0,(IX+1)
+	JP	ATTR
+ATR1:
+	CP	"H"
+	JR	NZ,ATH1
+	SET	1,(IX+1)
+	JP	ATTR
+ATH1:
+	CP	"S"
+	JR	NZ,ATA1
+	SET	2,(IX+1)
+	JP	ATTR
+ATA1:
+	CP	"A"
+	JR	NZ,ATD1
+	SET	5,(IX+1)
+	JP	ATTR
+ATD1:
+	CP	"D"
+	JR	NZ,ATV1
+	SET	4,(IX+1)
+	JP	ATTR
+ATV1:
+	CP	"V"
+	JR	NZ,ATL1
+	SET	3,(IX+1)
+	JP	ATTR
+ATL1:
+	CP	"L"
+	JR	NZ,ATX1
+	SET	6,(IX+1)
+	JP	ATTR
+ATX1:
+	CP	"X"
+	JP	NZ,USAGE
+	SET	7,(IX+1)
+	JP	ATTR
+;
+ATTR2:
+	CALL	ATTRS
+	JR	NZ,ATR2
+	RES	0,(IX+3)
+	JP	ATTR
+ATR2:
+	CP	"H"
+	JR	NZ,ATH2
+	RES	1,(IX+3)
+	JP	ATTR
+ATH2:
+	CP	"S"
+	JR	NZ,ATA2
+	RES	2,(IX+3)
+	JP	ATTR
+ATA2:
+	CP	"A"
+	JR	NZ,ATD2
+	RES	5,(IX+3)
+	JP	ATTR
+ATD2:
+	CP	"D"
+	JR	NZ,ATV2
+	RES	4,(IX+3)
+	JP	ATTR
+ATV2:
+	CP	"V"
+	JR	NZ,ATL2
+	RES	3,(IX+3)
+	JP	ATTR
+ATL2:
+	CP	"L"
+	JR	NZ,ATX2
+	RES	6,(IX+3)
+	JP	ATTR
+ATX2:
+	CP	"X"
+	JP	NZ,USAGE
+	RES	7,(IX+3)
+	JP	ATTR
+;
+ATTRS:
+	LD	A,(DE)
+	CALL	#CAP
+	INC	DE
+	CP	'R'
+	RET
+;
+SET1:
+	CALL	#RDFAT
+	CALL	#MOTOFF
+	CALL	NC,#SOPENX
+SET2:
+	JP	C,#RCLOSE
+;
+	LD	E,L
+	LD	D,H
+;
+	LD	BC,$000B
+	ADD	HL,BC
+;
+	LD	A,(HL)
+SET:	OR	$00
+RESET:	AND	$FF
+	CP	(HL)
+	LD	(HL),A
+	PUSH	AF
+	LD	B,(HL)
+	LD	A,"X"
+	CALL	PRINTA
+	LD	A,"L"
+	CALL	PRINTA
+	LD	A,"A"
+	CALL	PRINTA
+	LD	A,"D"
+	CALL	PRINTA
+	LD	A,"V"
+	CALL	PRINTA
+	LD	A,"S"
+	CALL	PRINTA
+	LD	A,"H"
+	CALL	PRINTA
+	LD	A,"R"
+	CALL	PRINTA
+	CALL	#PRNTS
+	CALL	#PRNTS
+	PUSH	HL
+	EX	DE,HL
+	CALL	#NFPRT
+	CALL	#MPRNT
+	DB	$05,$0D,0
+	POP	HL
+	CALL	#PAUSE
+	DW	SET3
+	POP	AF
+	CALL	NZ,#WTDIR
+;
+	LD	A,(#WILD)
+	OR	A
+	JP	Z,#MOTOFF
+	CALL	#NOPENX
+	JR	SET2
+;
+SET3:
+	POP	AF
+	CALL	#RCLOSE
+	AND	A
+	RET
+;
+PRINTA:
+	RLC	B
+	JR	C,PRTA1
+	LD	A,"-"
+PRTA1:
+	JP	#PRINT
+;
+USAGE:
+	CALL	#MPRNT
+	DB	"attrib v1.01"
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" ATTRIB ½²¯Á filename",$0D
+	DB	$0D
+	DB	"½²¯Á:"
+	DB	9,"+R  ×²ÄÌßÛÃ¸Ä ¾¯Ä",$0D
+	DB	9,"-R  ×²ÄÌßÛÃ¸Ä Ø¾¯Ä",$0D
+	DB	9,"+H  Ì¶¼ ¿Þ¸¾² ¾¯Ä",$0D
+	DB	9,"-H  Ì¶¼ ¿Þ¸¾² Ø¾¯Ä",$0D
+	DB	9,"+S  ¼½ÃÑ¿Þ¸¾² ¾¯Ä",$0D
+	DB	9,"-S  ¼½ÃÑ¿Þ¸¾² Ø¾¯Ä",$0D
+	DB	0
+	AND	A
+	RET
+

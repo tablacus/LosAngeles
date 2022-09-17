@@ -1,0 +1,208 @@
+;
+;	TWENTYON by Larn M.R.
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"/"
+	JR	Z,SW2
+	CP	"-"
+	JR	Z,SW2
+	JP	MAIN
+;
+SW2:	INC	DE
+	LD	A,(DE)
+	INC	DE
+	CALL	#CAP
+	CP	"R"
+	JP	Z,REMOVE
+	CP	"Z"
+	JP	NZ,USAGE
+MAIN:
+	CALL	PRO
+	RET	C
+;
+	LD	HL,(#FSEA)
+	LD	DE,$000C
+	ADD	HL,DE
+	LD	A,(HL)
+	INC	HL
+	CP	$E5
+	JP	NZ,ERROR
+	LD	A,(HL)
+	INC	HL
+	CP	$CD
+	JP	NZ,ERROR
+	PUSH	HL
+	POP	IY
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+	EX	DE,HL
+	LD	(_CPSTR+1),HL
+	LD	(_CPSTR2+1),HL
+;
+	CALL	TITLE
+;
+	CALL	#MPRNT
+	DB	"MEMAX:",0
+	LD	HL,(#MEMAX)
+	LD	(START+10),HL
+	LD	BC,LAST-START
+	AND	A
+	SBC	HL,BC
+	LD	(#MEMAX),HL
+	CALL	#PRTHL
+	CALL	#LTNL
+	EX	DE,HL
+;
+	LD	HL,_CPSTR-START
+	ADD	HL,DE
+	LD	(IY),L
+	LD	(IY+1),H
+;
+	LD	HL,START
+	LDIR
+	XOR	A
+	RET
+;
+REMOVE:	LD	HL,(#MEMAX)
+	LD	DE,(#MEMAX1)
+	PUSH	HL
+	AND	A
+	SBC	HL,DE
+	POP	HL
+	JR	Z,REME
+;
+	LD	DE,START
+	LD	B,10
+	CALL	CPSTR
+	JR	Z,REM2
+REME:	CALL	#MPRNT
+	DB	"¶²¼Þ®ÃÞ·Å²Ü!",7,$0D,0
+	AND	A
+	RET
+;
+REM2:
+	CALL	TITLE
+	CALL	#MPRNT
+	DB	'release',$0D,'MEMAX:',0
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+	INC	HL
+	EX	DE,HL
+	LD	(#MEMAX),HL
+	CALL	#PRTHL
+	CALL	#LTNL
+	EX	DE,HL
+;
+	INC	HL
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+	LD	HL,(#FSEA)
+	LD	BC,$000E
+	ADD	HL,BC
+	LD	(HL),E
+	INC	HL
+	LD	(HL),D
+	XOR	A
+	RET
+;
+PRO:	LD	HL,(#MEMAX)
+PRO1:	LD	DE,(#MEMAX1)
+	AND	A
+	EX	DE,HL
+	SBC	HL,DE
+	EX	DE,HL
+	RET	Z
+;
+	LD	A,(HL)
+	CP	'['
+	SCF
+	CCF
+	RET	NZ
+	LD	DE,START+2
+	INC	HL
+	LD	B,(HL)
+	INC	HL
+	LD	A,$1F
+	CP	B
+	JR	NC,PRO2
+	DEC	HL
+	LD	B,5
+PRO2:
+	PUSH	BC
+	PUSH	HL
+	CALL	CPSTR
+	POP	HL
+	POP	BC
+	SCF
+	RET	Z
+	LD	C,B
+	LD	B,0
+	ADD	HL,BC
+	LD	A,(HL)
+	INC	HL
+	LD	H,(HL)
+	LD	L,A
+	JR	PRO1
+;
+CPSTR:	LD	A,(DE)
+	CP	(HL)
+	RET	NZ
+	INC	DE
+	INC	HL
+	DJNZ	CPSTR
+	RET
+;
+TITLE:
+	CALL	#MPRNT
+	DB	$1A,"twentyon v1.00 Lovers"
+	DB	$0D,0
+	RET
+;
+USAGE:
+	CALL	TITLE
+	CALL	#MPRNT
+	DB	"usage:",$0D
+	DB	" TWENTYON     ¼Þ®³Á­³",$0D
+	DB	" TWENTYON /R  ¶²¼Þ®",$0D
+	DB	0
+	XOR	A
+	RET
+;
+ERROR:
+	CALL	#MPRNT
+	DB	"ºÉ ¼½ÃÑ ÆÊ À²µ³ ¼Ã ²Å²É!",7,$0D,0
+	RET
+;
+;		 0  1  23456789  A B
+START:	DB	"[",8,"TWENTYON",0,0
+;
+_CPSTR:	CALL	#HOT
+;
+	RET	NZ
+;
+	INC	HL
+	PUSH	HL
+	INC	HL
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	POP	HL
+	CP	$A0
+	RET	Z
+;
+	INC	DE
+	LD	B,10
+;
+_CPSTR2:JP	#HOT
+;
+LAST:
+

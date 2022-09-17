@@ -1,0 +1,32 @@
+CDOSII(JETターボターミナル)
+CP/M　MSX-DOS　LSX-Dodgers
+
+★LA.COM		L-os Angelesの起動
+
+☆書式
+
+A>LA
+
+※　A>は各DOSのプロンプトですので入力する必要はありません。
+
+
+○解説
+
+　CDOSII CP/M MSX-DOS LSX-DodgersからL-os Angelesを起動します。
+
+
+※注意
+
+　カレントドライブに "LA.SYS" が必要です。
+
+　CDOSかCP/M MSX-DOS LSX-Dodgersの判別は$0007番地の内容が
+
+$AF以下	CDOSII
+$B0以上	CP/M MSX-DOS LSX-Dodgers
+
+
+LA.COM
+
+1.00	1994.11. 7	新規作成(CDOSII専用)
+
+1.01	1995. 7.22	CP/M MSX-DOS LSX-Dodgersに対応

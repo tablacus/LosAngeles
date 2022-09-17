@@ -1,0 +1,130 @@
+;
+;	system information by Larn M.R.
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	CALL	#MPRNT
+	DB	$1A,"system information v1.00 Lovers",$0D
+	DB	$0D
+	DB	"¥L-os Angeles for ",0
+;
+	CALL	#VER
+	LD	A,$20
+	CP	H
+	JR	NZ,MAC1
+	LD	A,L
+	AND	1
+	OR	H
+	LD	H,A
+MAC1:
+	LD	DE,MAC
+MAC2:
+	LD	A,(DE)
+	INC	DE
+	CP	H
+	JR	Z,MACE
+MAC3:
+	LD	A,(DE)
+	INC	DE
+	INC	A
+	JR	Z,MACE
+	DEC	A
+	JR	NZ,MAC3
+	JR	MAC2
+MACE:
+	CALL	#MSX
+	CALL	#MPRNT
+	DB	" version ",0
+;
+	LD	HL,(#LVER)
+	LD	A,L
+	CP	$10
+	JR	C,VER1
+	CALL	#PRTHX
+	JR	VER2
+VER1:
+	ADD	A,"0"
+	CALL	#PRINT
+VER2:
+	LD	A,"."
+	CALL	#PRINT
+	LD	A,H
+	CALL	#PRTHX
+	CALL	#LTNL
+;
+	CALL	#VER
+	LD	DE,MKANJI
+	BIT	6,L
+	CALL	NZ,#MSX
+	LD	DE,M2HD
+	BIT	0,L
+	CALL	NZ,#MSX
+;
+	LD	A,H
+	AND	$F0
+	CP	$20
+	JR	NZ,NOTX1
+	CALL	#MPRNT
+	DB	"¥seek speed ",0
+	LD	A,(#SEEKSP)
+	CALL	#PRTHX
+	CALL	#LTNL
+;
+NOTX1:
+	LD	A,"¥"
+	CALL	#PRINT
+	LD	HL,(#MEMAX)
+	LD	DE,$3000
+	AND	A
+	SBC	HL,DE
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	" bytes free"
+	DB	$0D,"¥main 3000 - ",0
+	LD	HL,(#MEMAX)
+	DEC	HL
+	CALL	#PRTHL
+	CALL	#MPRNT
+	DB	$0D,"¥work 0000 - ",0
+	LD	HL,(#WKSIZ)
+	LD	A,H
+	OR	L
+	JR	Z,WORK1
+	DEC	HL
+WORK1:
+	CALL	#PRTHL
+	CALL	#LTNL
+	XOR	A
+	RET
+;
+MAC:
+	DB	$00,"MZ-80K/C/1200",0
+	DB	$01,"MZ-700",0
+	DB	$02,"MZ-1500",0
+	DB	$10,"MZ-80B",0
+	DB	$11,"MZ-2000/2200",0
+	DB	$12,"MZ-2500",0
+	DB	$20,"X1/turbo",0
+	DB	$21,"X1turbo",0
+	DB	$30,"PC-8801",0
+	DB	$31,"PC-8001",0
+	DB	$32,"PC-8801",0
+	DB	$40,"FM-7",0
+	DB	$50,"SMC-777",0
+	DB	$60,"PASOPIA",0
+	DB	$61,"PASOPIA7",0
+	DB	$70,"PC-9801",0
+	DB	$80,"X68000",0
+	DB	$90,"MSX",0
+	DB	$91,"MSX",0
+	DB	$92,"MSX",0
+	DB	$A0,"MSX-DOS",0
+	DB	$FF,"???",0
+;
+MKANJI:	DB	"¥kanji supported",$0D,0
+;
+M2HD:	DB	"¥2HD supported",$0D,0
+;
+

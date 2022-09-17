@@ -1,0 +1,294 @@
+;
+;	MD	(MKDIR)
+;
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	LD	A,$1A
+	CALL	#PRINT
+	LD	IX,(#IBFAD)
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"/"
+	JR	Z,SW
+	CP	"-"
+	JR	NZ,MAIN
+SW:
+	INC	DE
+	LD	A,(DE)
+	CALL	#CAP
+	INC	DE
+	CP	"I"
+	JP	Z,INCDIR
+	CP	"D"
+	JP	Z,DECDIR
+	CP	"S"
+	JP	NZ,USAGE
+;
+	CALL	ADEC
+	JP	C,USAGE
+	LD	(SIZE),A
+;
+MAIN:
+	XOR	A
+	CALL	#FILE
+	JP	C,USAGE
+	LD	HL,(#NDIRP)
+	LD	(SDBUF),HL
+	LD	A,(IX+1)
+	CP	$20
+	JP	Z,USAGE
+	CALL	#SOPEN
+	JP	NC,FEERR
+	RET	Z
+;
+	CALL	#WOPEN
+	RET	C
+	LD	(IX+1+$0B),$10	;ÃÞ¨Ú¸ÄØ ¿Þ¸¾²
+	LD	A,(SIZE)
+	LD	B,A
+	CALL	#WRDF
+	CALL	NC,#WTFAT
+	CALL	NC,#WTDIRX
+	CALL	#MOTOFF
+	RET	C
+;
+;		MAKE DIRCTRY DATA
+;
+	CALL	CLEAR
+;
+	LD	(HL),$2E
+	INC	HL
+	LD	A,$20
+	LD	B,7+3		;filename+ext
+MD1:
+	LD	(HL),A
+	INC	HL
+	DJNZ	MD1
+;
+	LD	(HL),$10	;¿Þ¸¾²
+;
+	LD	HL,DATA+$20
+	LD	(HL),$2E
+	INC	HL
+	LD	(HL),$2E
+	INC	HL
+	LD	A,$20
+	LD	B,6+3		;filename+ext
+MD2:
+	LD	(HL),A
+	INC	HL
+	DJNZ	MD2
+;
+	LD	(HL),$10	;¿Þ¸¾²
+;
+	LD	HL,DATA+$16
+	LD	DE,DATA+$20+$16
+	LD	B,6
+MD3:
+	LD	A,(IX+1+$16)
+	INC	IX
+	LD	(HL),A
+	INC	HL
+	LD	(DE),A
+	INC	DE
+	DJNZ	MD3
+;
+	LD	HL,(SDBUF)
+	LD	(DATA+$20+$1A),HL
+;
+	LD	B,1
+	LD	IX,(#IBFAD)
+	LD	E,(IX+1+$1A)
+	LD	D,(IX+1+$1B)
+	LD	(CLBUF),DE
+	CALL	#WRDD
+	RET	C
+	LD	A,(SIZE)
+	DEC	A
+	JR	Z,OK
+	PUSH	AF
+	CALL	CLEAR
+	POP	DE
+NEXT:
+	PUSH	DE
+	LD	B,1
+	LD	HL,DATA
+	LD	(#DTADR),HL
+	LD	DE,(#CLPS)
+	CALL	#WRDD
+	POP	DE
+	RET	C
+	DEC	D
+	JR	NZ,NEXT
+OK:
+	JP	FILES
+;
+INCDIR:
+	CALL	#FILE
+	RET	C
+	CALL	#ROPEN
+	RET	C
+	LD	HL,(#CLPS)
+	LD	(CLBUF),HL
+	EX	DE,HL
+ID1:
+	LD	(#CLPS),DE
+	CALL	#GNCL
+	CALL	#ENDCL
+	JR	C,ID1
+;
+	CALL	CLEAR
+	LD	B,1
+	CALL	#WRDX
+	RET	C
+DECDIRX:
+	CALL	#WTFAT
+	CALL	#MOTOFF
+	RET	C
+FILES:
+	LD	DE,(CLBUF)
+	LD	HL,0
+CL1:
+	INC	HL
+	PUSH	HL
+	CALL	#GNCL
+	CALL	#ENDCL
+	POP	HL
+	JR	C,CL1
+;
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	" clusters ,max files ",0
+;
+	ADD	HL,HL	;2
+	ADD	HL,HL	;4
+	ADD	HL,HL	;8
+	ADD	HL,HL	;16
+	ADD	HL,HL	;32
+	DEC	HL
+	DEC	HL
+	CALL	#PRTHLX
+	CALL	#LTNL
+	AND	A
+	RET
+;
+DECDIR:
+	CALL	#FILE
+	RET	C
+	CALL	#ROPEN
+	RET	C
+	LD	HL,(#CLPS)
+	LD	(CLBUF),HL
+;
+	EX	DE,HL
+DD1:
+	LD	HL,(#CLPS)
+	LD	(CLEBUF),HL
+	LD	(#CLPS),DE
+	CALL	#GNCL
+	CALL	#ENDCL
+	JR	C,DD1
+;
+	LD	HL,DATA
+	LD	DE,(#CLPS)
+	CALL	#CLUST
+	CALL	#DRDC
+	CALL	#MOTOFF
+	RET	C
+;
+	LD	HL,DATA
+	LD	DE,32
+	LD	B,E	;32
+DD2:
+	LD	A,(HL)
+	OR	A
+	JR	Z,DD3
+	CP	$E5
+	JP	NZ,CDERR
+	ADD	HL,DE
+	DJNZ	DD2
+DD3:
+	LD	HL,$FFFF
+	LD	DE,(CLEBUF)
+	CALL	#SNCL
+	LD	HL,0
+	LD	DE,(#CLPS)
+	CALL	#SNCL
+	JP	DECDIRX
+;
+CLEAR:
+	LD	HL,DATA
+	LD	DE,DATA+1
+	LD	BC,1023
+	LD	(HL),0
+	LDIR
+	LD	HL,DATA
+	LD	(#DTADR),HL
+	RET
+CDERR:
+	LD	DE,CDMES
+	JR	ERROR
+FEERR:
+	LD	DE,FEMES
+ERROR:
+	CALL	#MSX
+	CALL	#BELL
+	CALL	#MPRNT
+	DB	$1A,$0D,0
+	AND	A
+	RET
+;
+ADEC:
+	CALL	DEC
+	RET	C
+	INC	DE
+	LD	B,A
+	CALL	DEC
+	JR	NC,ADEC1
+	LD	A,B
+	AND	A
+	RET
+ADEC1:
+	INC	DE
+	LD	C,A
+	LD	A,B
+	ADD	A,A	;*2
+	ADD	A,A	;*4
+	ADD	A,B	;*5
+	ADD	A,A	;*10
+	ADD	A,C
+	AND	A
+	RET
+DEC:
+	LD	A,(DE)
+	SUB	"0"
+	RET	C
+	CP	10
+	CCF
+	RET
+;
+USAGE:
+	CALL	#MPRNT
+	DB	"make directory v1.01",$0D
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" MD [½²¯Á] pathname",$0D
+	DB	$0D,"½²¯Á:"
+	DB	9,"/D  decrement",$0D
+	DB	9,"/I  incerement",$0D
+	DB	9,"/Sn size(n:1-99)",$0D
+	DB	0
+	AND	A
+	RET
+;
+FEMES:	DB	"File or directory exists!",0
+CDMES:	DB	"Can't decrement!",0
+SIZE:	DB	4
+SDBUF:	DW	0
+CLBUF:	DW	0
+CLEBUF:	DW	0
+DATA:
+

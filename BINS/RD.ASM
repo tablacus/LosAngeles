@@ -1,0 +1,125 @@
+;
+;	RD	(RMDIR)		by Larn M.R.
+;
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	LD	IX,(#IBFAD)
+	LD	(DEBUF),DE
+	CALL	#FILE
+	JP	C,USAGE
+	LD	A,(IX+1)
+	CP	$20
+	JP	Z,USAGE
+	CALL	#RDFAT
+	RET	C
+	CALL	#SOPENX
+	LD	DE,$0B
+	BIT	6,(HL)
+	JP	Z,LNDRV
+;
+	CALL	#ROPEN
+	RET	C
+;
+	LD	A,(IX+1+$0B)
+	BIT	4,A
+	JP	Z,NDERR
+	AND	$0F
+	JP	NZ,WPERR
+;
+	CALL	#DEVADR
+	LD	L,(IY+$1A)	;!SDIR
+	LD	H,(IY+$1B)
+	LD	(SDBUF),HL
+;
+	CALL	#RDD		;=CHDIR
+	RET	C
+;
+	LD	HL,(#DIRPS)
+	LD	DE,(SDBUF)
+	AND	A
+	SBC	HL,DE
+	SCF
+	RET	Z
+;
+	LD	DE,WILD
+	LD	A,(#DSK)
+	LD	(DE),A
+	CALL	#FILE
+	RET	C
+	CALL	#SOPENX
+	RET	C
+	LD	A,(HL)
+	CP	"."
+	JP	NZ,NDERR0
+	CALL	#NOPENX
+	RET	C
+	LD	A,(HL)
+	CP	"."
+	JP	NZ,NDERR0
+	CALL	#NOPENX
+	PUSH	AF
+	CALL	#DEVADR
+	LD	HL,(SDBUF)
+	LD	(IY+$1A),L	;!SDIR
+	LD	(IY+$1B),H
+	POP	AF
+;
+	JP	NC,FEERR
+	RET	Z
+;
+LNDRV:
+	LD	DE,(DEBUF)
+	CALL	#FILE
+	RET	C
+	CALL	#SOPENX
+	RET	C
+	CALL	#KILLSX
+	CALL	#WTDIR
+	RET	C
+	CALL	#WTFAT
+	RET	C
+	CALL	#MPRNT
+	DB	"Ok",$0D,0
+	AND	A
+	RET
+;
+NDERR0:
+	CALL	#DEVADR
+	LD	HL,(SDBUF)
+	LD	(IY+$1A),L	;!SDIR
+	LD	(IY+$1B),H
+NDERR:
+	LD	DE,NDMES
+	JR	ERROR
+WPERR:
+	LD	DE,WPMES
+	JR	ERROR
+FEERR:
+	LD	DE,FEMES
+ERROR:
+	CALL	#MSX
+	CALL	#BELL
+	CALL	#LTNL
+	AND	A
+	RET
+USAGE:
+	CALL	#MPRNT
+	DB	$1A
+	DB	"remove directory v1.01"
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" RD pathname",$0D
+	DB	0
+	AND	A
+	RET
+;
+NDMES:	DB	"not directory!",0
+WPMES:	DB	"write protected!",0
+FEMES:	DB	"file or directory exists!",0
+WILD:	DB	"@:*.*",0
+DEBUF:	DW	0
+SDBUF:	DW	0
+

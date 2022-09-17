@@ -1,0 +1,78 @@
+;
+;	LN	by Larn M.R.
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"-"
+	JP	Z,USAGE
+	CP	$20
+	JP	C,USAGE
+;
+	LD	HL,DATA
+	LD	BC,64*256
+;
+DEST1:
+	LD	A,(DE)
+	INC	DE
+	CP	$20
+	JR	Z,DEST2
+	CP	$A0
+	JR	Z,DEST1
+	LD	(HL),A
+	INC	HL
+	INC	C
+	DJNZ	DEST1
+DEST2:
+	LD	B,0
+	LD	(#SIZE),BC
+;
+	XOR	A
+	CALL	#FILE
+	RET	C
+	CALL	#FPRNT
+	CALL	#LTNL
+	CALL	#RDFAT
+	CALL	#MOTOFF
+	RET	C
+	CALL	NC,#SOPENX
+	JP	NC,ERROR
+	RET	Z
+;
+	CALL	#WOPEN
+	RET	C
+;
+	LD	A,$60
+	LD	IX,(#IBFAD)
+	LD	(IX+1+$0B),A
+;
+	LD	HL,DATA
+	LD	(#DTADR),HL
+	CALL	#WRD
+	RET	C
+	CALL	#MPRNT
+	DB	"Ok",$0D,0
+	RET
+;
+USAGE:
+	CALL	#MPRNT
+	DB	$1A,"ln v1.01"
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" LN filename linkname",$0D
+	DB	0
+	AND	A
+	RET
+;
+ERROR:
+	CALL	#MPRNT
+	DB	"File already exists!",7,$0D,0
+	DB	0
+	AND	A
+	RET
+;
+DATA:
+

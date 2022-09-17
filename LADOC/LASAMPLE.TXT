@@ -1,0 +1,117 @@
+　　　L-os　Angeles
+
+　　　　LAの新しいコールを使ったサンプルプログラム
+
+
+　　LAのオリジナルサブルーチンを使ったサンプルプログラムです。
+　　使われている新しいサブルーチンの解説です。
+
+
+-	-	-	-	-	-	-	-	-	-
+
+_FGETC　　ファイルから1バイト入力　　　　破壊:AF
+
+　　Aレジスタにファイルから1バイト入力します。
+
+　　フラグは
+　　デバイスエラーがあった場合はCF=1,ZF=1となります。
+　　読み込むデータがなくなったらCF=1,ZF=0となります。
+
+-	-	-	-	-	-	-	-	-	-
+
+_NROPEN　次のファイルのオープン　　　　　破壊:AF BC DE HL
+
+  　ワイルドカードを使った場合の次のファイルをオープンします。
+　　_ROPENは最初のファイルのオープンになります。
+
+　　フラグはデバイスエラーがあった場合はCF=1、ZF=1となります。
+　　検索するファイルがなくなるとCF=1、ZF=0となります。
+
+　　基本的に
+
+　　　　CALL　　_FILE
+　　　　RET　　 C
+　　　　CALL　　_ROPEN
+LOOP1:　RET　　 C
+;
+　　　　_RDD等の処理
+　　　　　　　　・
+　　　　　　　　・
+;
+　　　　CALL　　_FILE
+　　　　RET　　 C
+　　　　CALL　　_NROPEN
+　　　　JP　　　LOOP1
+
+　　こういう感じで使って下さい。
+
+-	-	-	-	-	-	-	-	-	-
+-	-	-	-	-	-	-	-	-	-
+
+　　_FILEを呼んだあと(_WILD)が0で無い場合は
+　　ワイルドカードを使ってます
+
+;
+;　　　 TYPE　　SAMPLE PROGRAM
+;
+_LTNL　 EQU　　 $1FEE
+_FPRINT EQU　　 $1F9D
+_FILE　 EQU　　 $1FA3
+_PAUSE　EQU　　 $1FC7
+_PRINT　EQU　　 $1FF4
+_ROPEN　EQU　　 $2009
+_NROPEN EQU　　 $209D
+_FGETC　EQU　　 $2070
+_KYBFC　EQU　　 $20D0　　　　　 ;OHMなら$INCLUDE LA.DEFとすると
+;
+_IBFAD　EQU　　 $1F74　　　　　 ;以上省略可能
+;
+　　　　OFFSET　$C000-$3000
+　　　　ORG　　 $3000
+;
+START:　LD　　　(DEBUFFA),DE
+　　　　LD　　　IX,(_IBFAD)
+
+;
+　　　　CALL　　_FILE
+　　　　RET　　 C
+　　　　CALL　　_ROPEN　　　　　;最初のファイルのオープン
+;
+TYPE1:　JR　　　C,TYPEBK
+;
+　　　　LD　　　A,(IX+1+$0B)　　;ファイル属性チェック
+　　　　AND　　 $1F　　　　　　 ;通常ファイルでないならパス
+　　　　JR　　　NZ,TYPE5
+;
+　　　　LD　　　A,(IX+1+$10)　　;LAバイナリ形式チェック
+　　　　CP　　　$A0　　　　　　 ;$A0=バイナリ形式ならパス
+　　　　JR　　　Z,TYPE5
+;
+　　　　CALL　　_FPRINT　　　　 ;ファイル名の表示
+　　　　CALL　　_LTNL
+;
+TYPE3:　CALL　　_FGETC　　　　　;ファイルから1バイト入力
+　　　　JR　　　C,TYPE4　　　　 ;CF=1 ZF=1...ERROR,CF=1 ZF=0...EOF
+　　　　CP　　　$1A　　　　　　 ;for MS-DOS
+　　　　JR　　　Z,TYPE5
+　　　　CP　　　$0A　　　　　　 ;for MS-DOS
+　　　　JR　　　Z,TYPE3
+　　　　CALL　　_PRINT　　　　　;1文字表示
+　　　　CALL　　_PAUSE　　　　　;ポーズ処理
+　　　　DW　　　TYPEBK
+　　　　JR　　　TYPE3
+;
+TYPE4:　RET　　 Z　　　　　　　 ;ZF=1 ... ERROR
+;
+TYPE5:　LD　　　DE,(DEBUFFA)　　;ワイルドカード対応の処理
+　　　　CALL　　_FILE
+　　　　RET　　 C
+　　　　CALL　　_NROPEN　　　　 ;次のファイルのオープン
+　　　　JR　　　TYPE1
+;
+TYPEBK: CALL　　_KYBFC　　　　　;処理の中止　キーバッファのクリア
+　　　　AND　　 A
+　　　　RET
+;
+DEBUFFA:DW　　　0
+;

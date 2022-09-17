@@ -1,0 +1,274 @@
+;
+;	SCREEN CONTROLLER "SC.BIN"
+;
+	$INCLUDE	LA.DEF
+;
+	OFFSET	$C000-$3000
+	ORG	$3000
+;
+	XOR	A
+	LD	(FLG),A
+	JR	SCRX
+;
+SCR0:	LD	DE,0
+;
+SCRX:	CALL	#SPSK
+	LD	A,(DE)
+	CP	"/"
+	JR	Z,SCRY
+	CP	"-"
+	JR	NZ,SCR1
+SCRY:
+	INC	DE
+	LD	A,(DE)
+SCR1:	INC	DE
+	LD	(SCR0+1),DE
+	CALL	#CAP
+	LD	HL,RESOH
+	CP	'H'
+	JP	Z,RESO
+	LD	HL,RESOI
+	CP	'I'
+	JP	Z,RESO
+	LD	HL,RESOS
+	CP	'S'
+	JP	Z,RESO
+	LD	HL,RESOP
+	CP	'P'
+	JP	Z,RESO
+	CP	"B"
+	JP	Z,BANK
+	CP	'0'
+	JP	Z,CGOFF
+	CP	'1'
+	JP	Z,CGON
+	CP	'D'
+	JP	Z,DIGITAL
+	CP	'A'
+	JP	Z,ANALOG
+	LD	HL,RESOL
+	CP	'L'
+	JP	Z,RESO
+	CP	'V'
+	JP	Z,VIDEO
+	CP	'2'
+	JP	Z,LINE2
+	CP	'4'
+	JP	Z,LINE4
+	CP	'C'
+	JP	Z,CLEAR
+	CP	"T"
+	JP	Z,TEXT
+	CP	"K"
+	JP	Z,KANJI
+;
+	LD	A,(FLG)
+	OR	A
+	RET	NZ
+	CALL	#MPRNT
+	DB	"X1 screen controler v1.03 Lovers"
+	DB	$0D
+	DB	"usage:",$0D
+	DB	" SC [½²¯Á]",$0D,$0D
+	DB	9,"/0  ¸Þ×Ì¨¯¸ µÌ",$0D
+	DB	9,"/1  ¸Þ×Ì¨¯¸ µÝ",$0D
+	DB	9,"/C  ¸Þ×Ì¨¯¸ ¸Ø±(bank0)",$0D
+	DB	"turbo",$0D
+	DB	9,"/L  Ã²¶²¿Þ³ÄÞ Ó°ÄÞ",$0D
+	DB	9,"/H  º³¶²¿Þ³ÄÞ Ó°ÄÞ",$0D
+	DB	9,"/S  ²ÝÀ°Ú½ Ó°ÄÞ1 (½°Êß°²ÝÎß°½Þ ¶É³)",$0D
+	DB	9,"/I  ²ÝÀ°Ú½ Ó°ÄÞ2 (¸Þ×Ì¯¨¸ ¶É³)",$0D
+	DB	9,"/B  ¸Þ×Ì¨¯¸ÊÞÝ¸ º³¶Ý",$0D
+	DB	9,"/K  ¶Ý¼Þ V-RAM ¸Ø±",$0D
+	DB	9,"/2  200×²Ý Ó°ÄÞ",$0D
+	DB	9,"/4  400×²Ý Ó°ÄÞ",$0D
+	DB	"turbo Z",$0D
+	DB	9,"/A  ±ÅÛ¸ÞÓ°ÄÞ",$0D
+	DB	9,"/D  ÃÞ¼ÞÀÙÓ°ÄÞ",$0D
+	DB	9,"/T  Ã·½ÄÊßÚ¯Ä ¼®·¶",$0D
+	DB	9,"/V  ËÞÃÞµ ÄØºÐ",$0D
+	DB	0
+	RET
+;
+FLG:	DB	0
+;
+CGON:
+	LD	A,(#WK1FD0)
+	AND	$7F
+	CALL	#S1FD0
+	LD	HL,$CCAA
+	LD	($00F6),HL
+	LD	HL,$00F0
+CGOFF2:	LD	($00F8),HL
+	CALL	$0A5A
+RETURN:	LD	A,$FF
+	LD	(FLG),A
+	JP	SCR0
+;
+CGOFF:	CALL	DIGITA2
+	LD	HL,0
+	LD	($00F6),HL
+	JR	CGOFF2
+;
+LINE2:	LD	A,(#WK1FD0)
+	OR	2
+LINE4S:	CALL	#S1FD0
+	JP	RETURN
+;
+LINE4:	LD	A,(#WK1FD0)
+	AND	$FD
+	JR	LINE4S
+;
+BANK:
+	LD	A,(#WK1FD0)
+	SET	4,A
+	LD	E,A	;BANK1
+	RES	4,A
+	LD	D,A	;BANK0
+	CALL	#S1FD0
+	LD	BC,$4000
+BANK1:
+	IN	H,(C)	;BANK0
+	LD	A,E
+	CALL	#S1FD0	;BANK1
+	IN	L,(C)
+	OUT	(C),H
+	LD	A,D
+	CALL	#S1FD0	;BANK0
+	OUT	(C),L
+	INC	BC
+	LD	A,B
+	OR	C
+	JR	NZ,BANK1
+	JP	RETURN
+;
+CLEAR:	CALL	$0A8F
+	JP	RETURN
+;
+DIGITAL:CALL	DIGITA2
+	JP	RETURN
+;
+DIGITA2:LD	BC,$1FB0
+	DB	$ED,$71
+	RET
+;
+VIDEO:	CALL	RESO1
+	CALL	ANALOG1
+	LD	A,(VIDEOH)
+	LD	BC,$1FC1
+	OUT	(C),A
+;
+VIDEO2:	LD	A,$88
+	CALL	ANALOG2
+	CALL	FLGET
+	PUSH	AF
+	CALL	ANALOG1
+	POP	AF
+	CP	$1B
+	JP	Z,#LTNL
+	CALL	FLGET
+	CP	$1B
+	JR	NZ,VIDEO2
+	CALL	#LTNL
+;
+ANALOG:	CALL	ANALOG1
+	JP	RETURN
+;
+ANALOG1:LD	A,$80
+ANALOG2:LD	BC,$1FB0
+	OUT	(C),A
+	RET
+;
+FLGET:
+	LD	A,$0C
+	CALL	#PRINT
+	LD	A,(VIDEOH)
+	CALL	#PRTHX
+;
+	CALL	#FLGET
+	CP	9	
+	JR	NZ,FL1
+	LD	A,(#WIDTH)
+	SUB	80
+	CALL	#WIDCH
+	JR	FLGET
+FL1:
+	CP	$1D
+	JR	NZ,FL2
+	LD	A,(VIDEOH)
+	INC	A
+	JR	Z,FLGET
+FL3:
+	LD	(VIDEOH),A
+	LD	BC,$1FC1
+	OUT	(C),A
+	JR	FLGET
+FL2:
+	CP	$1C
+	RET	NZ
+	LD	A,(VIDEOH)
+	OR	A
+	JR	Z,FLGET
+	DEC	A
+	JR	FL3
+;
+TEXT:	LD	BC,$1FB0
+	IN	E,(C)
+	LD	A,$80
+	OUT	(C),A
+	LD	D,7
+	LD	C,$B9
+	LD	HL,TEXTDT
+;
+TEXT1:	INC	B
+	OUTI
+	INC	C
+	DEC	D
+	JR	NZ,TEXT1
+	LD	BC,$1FB0
+	OUT	(C),E
+	JP	RETURN
+;
+KANJI:	LD	BC,$3800
+KANJI1:	DB	$ED,$71
+	INC	BC
+	BIT	6,B
+	JR	Z,KANJI1
+	JP	RETURN
+;
+RESO1:	LD	DE,$00DD
+	LD	BC,20
+	LDIR
+	LD	A,(HL)
+	CALL	#S1FD0
+	CALL	$09A1
+	LD	A,(#WIDTH)
+	JP	#WIDCH
+;
+RESO:	CALL	RESO1
+	JP	RETURN
+;
+RESOL:	DB	$37,$28,$2D,$34,$1F,$02,$19,$1C
+	DB	$00,$07,$00,$00,$00,$00,$00,$00
+	DB	$6F,$50,$59,$38,$00
+;
+RESOH:	DB	$35,$28,$2D,$84,$1B,$01,$19,$1A
+	DB	$00,$0F,$00,$00,$00,$00,$00,$00
+	DB	$6B,$50,$59,$88,$03
+;
+RESOI:	DB	$53,$28,$3C,$34,$1F,$01,$19,$1C
+	DB	$03,$0E,$00,$00,$00,$00,$00,$00
+	DB	$A7,$50,$76,$38,$03
+;
+RESOS:	DB	$37,$28,$2D,$34,$1F,$00,$19,$1C
+	DB	$03,$0E,$00,$00,$00,$00,$00,$00
+	DB	$6F,$50,$59,$38,$84
+;
+RESOP:	DB	$53,$40,$47,$34,$1F,$07,$1D,$1E
+	DB	$03,$0E,$00,$00,$00,$00,$00,$00
+	DB	$A7,$50,$76,$38,$01
+;
+TEXTDT:	DB	$03,$0C,$0F,$30,$33,$3C,$3F
+;
+VIDEOH:	DB	40
+

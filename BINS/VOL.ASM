@@ -1,0 +1,169 @@
+;
+;	VOL	by Larn M.R.
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"-"
+	JR	Z,SW
+	CP	"/"
+	JR	NZ,MAIN
+	INC	DE
+	LD	A,(DE)
+	INC	DE
+	CALL	#CAP
+	CP	"S"
+	JP	Z,SET
+	CP	"C"
+	JP	Z,DEL
+SW:
+	JP	USAGE
+MAIN:
+	CALL	#FILE
+	RET	C
+;
+	CALL	SEARCH
+	RET	C
+	PUSH	AF
+	CALL	#MPRNT
+	DB	"ÄÞ×²ÌÞ ",0
+	LD	A,(#DSK)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	": É ÎÞØ­°Ñ×ÍÞÙ Ê ",0
+	POP	AF
+	JR	Z,NOLABEL
+	CALL	#NFPRT
+	CALL	#LTNL
+	XOR	A
+	RET
+NOLABEL:
+	CALL	#MPRNT
+	DB	"±ØÏ¾Ý",$0D,0
+	XOR	A
+	RET
+;
+SET:
+	LD	HL,(#IBFAD)
+	LD	B,22
+	XOR	A
+SET1:
+	INC	HL
+	LD	(HL),A
+	DJNZ	SET1
+;
+	CALL	#FILE
+	RET	C
+	LD	HL,0
+	LD	(#NDIRP),HL
+	CALL	#SOPEN
+	CCF
+	RET	C
+	SCF
+	RET	Z
+	LD	HL,(#IBFAD)
+	INC	HL
+	LD	DE,BUFFA
+	LD	BC,22
+	LDIR
+;
+	CALL	SEARCH
+	RET	C
+	JR	Z,SET2
+	LD	A,(IX+$0B)
+	AND	$17
+	SCF
+	RET	NZ
+	JR	SET3
+SET2:
+	CALL	#COPEN
+	RET	C
+	LD	HL,(#FBAD)
+	PUSH	HL
+	POP	IX
+SET3:
+	EX	DE,HL
+	LD	HL,BUFFA
+	LD	BC,22
+	LDIR
+	LD	B,10
+	XOR	A
+SET4:
+	LD	(DE),A
+	INC	DE
+	DJNZ	SET4
+;
+	LD	(IX+$0B),8	;ÎÞØ­°Ñ×ÍÞÙ
+	CALL	#SETTMS
+	LD	IY,(#IBFAD)
+	LD	B,4
+SET6:
+	LD	A,(IY+1+$16)
+	INC	IY
+	LD	(IX+$16),A
+	INC	IX
+	DJNZ	SET6
+;
+DELX:
+	CALL	#WTDIR
+	RET	C
+	CALL	#MPRNT
+	DB	"Ok",$0D,0
+	XOR	A
+	RET
+;
+DEL:
+	CALL	SEARCH
+	RET	C
+	RET	Z
+	LD	A,(IX+$0B)
+	AND	$17
+	SCF
+	RET	NZ
+	LD	(HL),$E5
+	JR	DELX
+;
+SEARCH:
+	LD	DE,DIRW
+	CALL	#FILED
+	LD	HL,0
+	LD	(#NDIRP),HL	;Ù°ÄÃÞ¨Ú¸ÄØ
+;
+	CALL	#RDFAT
+	RET	C
+	CALL	#SOPENX
+SE1:
+	JR	C,SEERR
+	PUSH	HL
+	POP	IX
+	BIT	3,(IX+$0B)
+	RET	NZ
+;
+	CALL	#NOPENX
+	JR	SE1
+;
+SEERR:
+	RET	Z
+	XOR	A
+	RET
+;
+USAGE:
+	CALL	#MPRNT
+	DB	$1A,"vol v1.00"
+	DB	" Lovers",$0D
+	DB	"usage:",$0D
+	DB	" VOL [½²¯Á] [ÎÞØ­°Ñ×ÍÞÙ]",$0D
+	DB	$0D
+	DB	9,"/C »¸¼Þ®",$0D
+	DB	9,"/S ¾¯Ã²",$0D
+	DB	0
+	XOR	A
+	RET
+;
+DIRW:	DB	"*.*",0
+;
+BUFFA:				;22
+

@@ -1,0 +1,253 @@
+;
+;	CUSTOM
+;
+	$INCLUDE	LA.DEF
+;
+DATA	EQU	$3400
+;
+	ORG	$3000
+;
+	PUSH	DE
+	CALL	#MPRNT
+	DB	$1A,"X1 custom v1.02 Lovers",$0D,0
+	POP	DE
+	LD	A,1
+	CALL	#FILE
+	JP	C,USAGE
+	LD	IX,(#IBFAD)
+	LD	A,(IX+1)
+	CP	$20
+	JP	Z,USAGE
+	LD	A,(#WILD)
+	OR	A
+	JP	NZ,USAGE
+;
+	LD	HL,0		;LA ÎÝÀ²
+	LD	DE,DATA
+	LD	BC,$2400
+	LDIR
+;
+	LD	HL,$2400
+	LD	(#USR+DATA),HL
+	LD	HL,$FFFF
+	LD	(#CYL0+DATA),HL
+	LD	(#CYL2+DATA),HL
+;
+	CALL	#VER
+	BIT	0,L
+	JR	Z,NORMAL
+	LD	A,1
+	LD	(TURBO),A
+NORMAL:
+	LD	HL,(#LVER)
+	LD	A,L
+	ADD	A,"0"
+	LD	(VERH),A
+;
+	LD	A,H
+	LD	DE,VERL
+	CALL	#HEXHX
+;
+	LD	HL,(1)
+	LD	(TSR1+1),HL
+	LD	HL,TSR-INIT+$2400
+	LD	(DATA+1),HL
+;
+	LD	HL,INIT		;²Æ¼¬ÙÌßÛ¸Þ×Ñ
+	LD	DE,DATA+$2400
+	LD	BC,FIN-INIT
+	LDIR
+;
+	LD	DE,(#MEMAX)	;¼Þ®³Á­³ÌÞ
+	LD	HL,$FF00
+	AND	A
+	SBC	HL,DE
+	LD	B,H
+	LD	C,L
+	EX	DE,HL
+	LD	DE,DATA+$2400+FIN-INIT
+	LD	A,B
+	OR	C
+	JR	Z,CUSTOM1
+	PUSH	BC
+	LDIR
+	POP	BC
+CUSTOM1:
+	LD	HL,$2400+FIN-INIT
+	ADD	HL,BC
+	LD	(#SIZE),HL
+	LD	HL,0
+	LD	(#DTADR),HL
+	LD	(#EXADR),HL
+;
+	CALL	#MPRNT
+	DB	"save",9,$20,0
+	LD	A,(#DSK)
+	CALL	#PRINT
+	LD	A,":"
+	CALL	#PRINT
+	CALL	#FPRNT
+	LD	A,":"
+	CALL	#PRINT
+	LD	HL,(#DTADR)
+	CALL	#PRTHL
+	LD	A,":"
+	CALL	#PRINT
+	LD	DE,(#SIZE)
+	ADD	HL,DE
+	DEC	HL
+	CALL	#PRTHL
+	LD	A,":"
+	CALL	#PRINT
+	LD	HL,(#EXADR)
+	CALL	#PRTHL
+;
+	CALL	SURE
+	SCF
+	CCF
+	RET	NZ
+;
+	CALL	#WOPEN
+	RET	C
+;
+	LD	HL,DATA
+	LD	(#DTADR),HL
+;
+	CALL	#WRD
+	CALL	#MPRNT
+	DB	"completed !",$0D,0
+	AND	A
+	RET
+;
+SURE:
+	CALL	#MPRNT
+	DB	$0D,"sure? (Y/other)",0
+	CALL	#FLGET
+	CALL	#LTNL
+	CP	"Y"
+	RET	Z
+	CP	"y"
+	RET	Z
+	CP	"Ý"
+	RET
+;
+USAGE:
+	CALL	#MPRNT
+	DB	"usage:",$0D
+	DB	" CUSTOM filename",$0D
+	DB	0
+	AND	A
+	RET
+;
+INIT:
+	LD	SP,(#STKAD)
+;
+	LD	HL,#HOT
+	LD	(#USR),HL
+;
+	CALL	#MPRNT
+	DB	$0C,"¥L-os Angeles for X1"
+TURBO:	DB	"/turbo version "
+VERH:	DB	"X."
+VERL:	DB	"XX"
+	DB	$0D,"¥by Gaku Nakagawa as Larn M.R.(Lovers)",13
+	DB	"Ok",$0D,0
+;
+	LD	A,(#MAXDRV)
+	ADD	A,"A"
+	LD	C,A
+;
+	LD	A,($FF00)
+	CP	$01
+	JR	NZ,FDD
+;
+	LD	A,"A"
+EMM1:
+	LD	B,A
+	CALL	#DEVADX
+	JR	C,EMM2
+	LD	A,(IY+$12)
+	CP	6
+	JR	Z,EMMX
+EMM2:
+	LD	A,B
+	INC	A
+	CP	C
+	JR	C,EMM1
+FDD:
+	LD	A,($FF87)
+	AND	3
+	LD	D,A
+	LD	A,"A"
+FDD1:
+	LD	B,A
+	CALL	#DEVADX
+	JR	C,FDD2
+	LD	A,(IY+$12)
+	AND	$7F
+	CP	7
+	JR	NZ,FDD2
+	LD	A,(IY+$13)
+	CP	D
+	JR	Z,EMMX
+FDD2:
+	LD	A,B
+	INC	A
+	CP	C
+	JR	C,FDD1
+;
+	LD	A,"A"
+ETC1:
+	LD	B,A
+	CALL	#DEVADX
+	JR	NC,EMMX
+	LD	A,B
+	INC	A
+	CP	C
+	JR	C,ETC1
+	LD	A,"A"
+EMMX:
+	LD	A,B
+	CALL	#SDVSW
+	CALL	#CHGDRV
+	CALL	#MOTOFF
+;
+	LD	BC,$1A01	;printer init
+	IN	A,(C)
+	BIT	3,A
+	JR	Z,PRN
+	LD	C,$03
+	LD	A,$0F
+	OUT	(C),A
+PRN:
+	CALL	#BRKEY
+	JR	Z,INIT6
+	CALL	#KYBFC
+	LD	HL,AUTOD-INIT+$2400
+INIT5:
+	LD	A,(HL)
+	OR	A
+INIT6:
+	JP	Z,#HOT
+	CALL	#KYBFS
+	INC	HL
+	JR	INIT5
+;
+AUTOD:	DB	" Command",$0D,0
+;
+TSR:
+	LD	DE,(#MEMAX)
+	LD	HL,$FF00
+	AND	A
+	SBC	HL,DE
+	JR	Z,TSR1
+	LD	B,H
+	LD	C,L
+	LD	HL,$2400+FIN-INIT
+	LDIR
+TSR1:	LD	HL,0
+	LD	(1),HL
+	JP	(HL)
+;
+FIN:
+

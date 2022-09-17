@@ -1,0 +1,205 @@
+;
+;	FLOPPY DISK SET
+;
+	$INCLUDE	LA.DEF
+;
+DEID	EQU	$87
+;
+;
+	OFFSET	$C000-$3000
+	ORG	$3000
+;
+;	INIT
+;
+	XOR	A
+	LD	(AUTOS),A
+;
+	PUSH	DE
+	CALL	#MPRNT
+	DB	"FDD v1.02"
+	DB	" (C) 1994 by Larn M.R.",$0D,0
+	POP	DE
+GRAD1:	CALL	#SPSK
+	LD	A,(DE)
+	INC	DE
+	CP	"-"
+	JR	Z,SWI
+	CP	"/"
+	JP	NZ,GRAD2
+SWI:
+	LD	A,(DE)
+	CALL	#CAP
+	INC	DE
+	CP	'A'
+	JR	NZ,GRAD1A
+	LD	(AUTOS),A
+	JR	GRAD1
+GRAD1A:	CP	'I'
+	JR	NZ,GRAD1
+;
+	CALL	#LTNL
+	XOR	A
+INIT1:	LD	L,A
+	ADD	A,'A'
+	CALL	#DEVAD2
+	LD	A,(IY+$12)
+	CP	DEID
+	JR	NZ,INIT2
+	LD	A,L
+	LD	(IY+$13),A
+	ADD	A,'0'
+	LD	(IY+$1F),A
+;
+INIT2:	LD	A,L
+	ADD	A,'A'
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	': ',0
+	CALL	NAME
+	CALL	#LTNL
+	LD	A,L
+	INC	A
+	CP	4
+	JR	NZ,INIT1
+	RET
+;
+GRAD2:	LD	A,(DE)
+	CP	':'
+	JR	Z,GRAD3
+GRADM:	CALL	#MPRNT
+	DB	"usage:",$0D
+	DB	" FDD [½²¯Á] <drv>: <unit>",$0D,$0D
+	DB	"½²¯Á:"
+	DB	9,'/I  Initial',$0D
+	DB	9,'/A  µ°ÄÓ°ÄÞ',$0D
+	DB	0
+	AND	A
+	RET
+;
+GRAD3:	DEC	DE
+	LD	A,(DE)
+	CP	'0'
+	JR	C,GRADM
+	LD	(DRIVE),A
+;
+	INC	DE
+	INC	DE
+	CALL	#2HEX
+	JR	C,GRADM
+	CP	4
+	JR	NC,GRADM
+	LD	(UNIT),A
+;
+	CALL	GRADP
+	RET	NC
+;
+	LD	A,(DRIVE)
+	CALL	#DEVAD2
+	PUSH	IY
+	POP	DE
+	LD	HL,(#M2D)
+	LD	BC,18
+	LDIR
+;
+	LD	(IY+$12),$87
+	LD	A,(UNIT)
+	LD	(IY+$13),A
+;
+	LD	HL,(#MTOFFA)
+	LD	(IY+$14),L
+	LD	(IY+$15),H
+;
+	LD	HL,(#GNCLA)
+	LD	(IY+$16),L
+	LD	(IY+$17),H
+;
+	LD	HL,(#SNCLA)
+	LD	(IY+$18),L
+	LD	(IY+$19),H
+;
+	LD	(IY+$1A),0	;SDIR
+	LD	(IY+$1B),0
+;
+	LD	(IY+$1C),'F'
+	LD	(IY+$1D),'D'
+	LD	(IY+$1E),'D'
+	LD	A,(UNIT)
+	LD	L,A
+	LD	H,$1F
+	LD	(HL),$FF
+	ADD	A,'0'
+	LD	(IY+$1F),A
+;
+	CALL	NOWDRV
+	CALL	LTNL2
+	AND	A
+	RET
+;
+GRADP:	LD	A,(DRIVE)
+	CALL	#DEVAD2
+	RET	C
+	LD	A,(IY+$12)
+	CP	DEID
+	JR	NZ,GRADP2
+	LD	A,(UNIT)
+	CP	(IY+$13)
+	SCF
+	RET	Z
+GRADP2:	LD	A,(AUTOS)
+	OR	A
+	SCF
+	RET	NZ
+;
+	CALL	#MPRNT
+	DB	'Now ',0
+	CALL	NOWDRV
+	CALL	LTNL2
+	CALL	#MPRNT
+	DB	'Do you want to change to "FDD',0
+	LD	A,(UNIT)
+	ADD	A,'0'
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	'"? (Y/other):',0
+	CALL	#FLGET
+	CALL	#CAP
+	CP	'Y'
+	JR	Z,SURE1
+	CP	'Ý'
+	JR	Z,SURE1
+;
+	CALL	#MPRNT
+	DB	'No.',$0D,0
+	AND	A
+	RET
+;
+SURE1:	CALL	#MPRNT
+	DB	"Yes.",$0D,0
+	SCF
+	RET
+;
+NOWDRV:	CALL	#MPRNT
+	DB	'Drive "',0
+	LD	A,(DRIVE)
+	CALL	#PRINT
+	CALL	#MPRNT
+	DB	":",$22," is ",$22,0
+;
+NAME:	LD	A,(IY+$1C)
+	CALL	#PRINT
+	LD	A,(IY+$1D)
+	CALL	#PRINT
+	LD	A,(IY+$1E)
+	CALL	#PRINT
+	LD	A,(IY+$1F)
+	JP	#PRINT
+;
+LTNL2:	CALL	#MPRNT
+	DB	'"',$0D,0
+	RET
+;
+AUTOS:	DB	0
+DRIVE:	DB	0
+UNIT:	DB	0
+;
+

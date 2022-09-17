@@ -1,0 +1,73 @@
+;
+;	FAT
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	LD	A,$1A
+	CALL	#PRINT
+	CALL	#SPSK
+	LD	A,(DE)
+	CP	"/"
+	JP	Z,USAGE
+	CP	"-"
+	JP	Z,USAGE
+	CALL	#FILE
+	JP	C,USAGE
+	CALL	#RDFAT
+	CALL	#MOTOFF
+	RET	C
+	CALL	#MPRNT
+	DB	"      +0  +1  +2  +3  +4  +5  +6  +7"
+	DB	"  +8  +9  +A  +B  +C  +D  +E  +F"
+	DB	$0D,0
+;
+	LD	DE,0
+FAT1:
+	LD	B,16
+	CALL	PRTDE
+	CALL	#PRNTS
+FAT2:
+	CALL	#PRNTS
+	PUSH	BC
+	PUSH	DE
+	CALL	#GNCL
+	CALL	PRTDE
+	POP	DE
+	POP	BC
+;
+	INC	DE
+	CALL	#ENDCL
+	JR	NC,FATE
+	DJNZ	FAT2
+	CALL	#PAUSE
+	DW	FATE
+	CALL	#LTNL
+	JR	FAT1
+;
+FATE:
+	CALL	#LTNL
+	CALL	#DSKF
+	CALL	#PRTHLX
+	CALL	#MPRNT
+	DB	" K Bytes Free",$0D,0
+	AND	A
+	RET
+;
+PRTDE:
+	LD	A,D
+	CALL	#ASC
+	CALL	#PRINT
+	LD	A,E
+	JP	#PRTHX
+;
+USAGE:	CALL	#MPRNT
+	DB	"fat v1.00"
+	DB	" (C) 1994 Lovers",$0D
+	DB	"usage:",$0D
+	DB	" FAT [<drv>:]",$0D
+	DB	0
+	AND	A
+	RET
+

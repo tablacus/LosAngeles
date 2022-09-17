@@ -1,0 +1,230 @@
+;
+;	L-os Angeles Include Liblary
+;
+;	Multi File Liblary FILES.ASM
+;
+;	Version 0.5 Larn M.R.(Lovers)
+;
+;
+;	_FILESI		Inital
+;	_CHGFILE	Change File (File No.<-A)
+;	_NROPEN		Highspeed #NROPEN
+;	_FILESR		Release
+;
+;	_FILESW		Work Area
+;	_FILESD		File Data
+;
+	$BEGIN		;Local label
+;
+	JP	START
+;
+;	FILES WORK
+;
+FATBF2	EQU	$$_FILESW
+DTBUF2	EQU	FATBF2+$0C00	;+$0C00
+GCBUF2	EQU	DTBUF2		;+$0C00
+DIRBF1	EQU	DTBUF2+$400	;+$1000
+DIRBF2	EQU	DIRBF1+$400	;+$1400
+				;+$17FF
+;
+_FILESD::EQU	DIRBF2+$400	;DS	70
+FILEDT2	EQU	_FILESD+70	;DS	70
+FATBF1	EQU	FILEDT2+70	;DW	0
+DTBUF1	EQU	FATBF1+2	;DW	0
+GCBUF1	EQU	DTBUF1+2	;DW	0
+DIRBF0	EQU	GCBUF1+2	;DW	0
+;
+;
+_FILESI::
+	PUSH	HL
+	LD	HL,($$#FATBF)
+	LD	(FATBF1),HL
+	LD	HL,($$#DTBUF)
+	LD	(DTBUF1),HL
+	LD	HL,($$#DIRBF)
+	LD	(DIRBF0),HL
+	LD	HL,($$#GCBUF)
+	LD	(GCBUF1),HL
+;
+;	SET FILE0
+;
+	LD	HL,DIRBF1
+	LD	($$#DIRBF),HL
+	XOR	A
+	LD	(_FILESR),A
+	CALL	STFILE
+;
+;	SET FILE1
+;
+	LD	HL,FATBF2
+	LD	($$#FATBF),HL
+	LD	HL,DTBUF2
+	LD	($$#DTBUF),HL
+	LD	HL,DIRBF2
+	LD	($$#DIRBF),HL
+	LD	HL,GCBUF2
+	LD	($$#GCBUF),HL
+	LD	A,DTBUF2/256+3
+	LD	($$#GCEH),A
+;
+	LD	A,1
+	CALL	STFILE
+;
+	POP	HL
+	XOR	A
+	JR	LDFILE
+;
+_CHGFILE::
+	AND	1
+;
+FILENO:	CP	$00
+	RET	Z
+	PUSH	AF
+;
+	LD	A,(FILENO+1)
+	CALL	STFILE
+;
+	POP	AF
+;
+LDFILE:
+	PUSH	DE
+	PUSH	HL
+	LD	(FILENO+1),A
+	LD	DE,_FILESD
+	OR	A
+	JR	Z,LDF1
+	LD	DE,FILEDT2
+LDF1:
+	LD	HL,($$#IBFAD)	;DIRENT.
+	EX	DE,HL
+	LD	BC,33
+	LDIR
+;
+	LD	DE,$$#SIZEH	;#SIZEH
+	LD	C,2
+	LDIR
+;
+	LD	DE,$$#CLPS
+			;#CLPS	 2
+			;#GCAD	 2
+			;#GCLN	 2
+			;#GCEH	 1
+			;#CLLN	 1
+			;#FBPS	 2
+			;#FBAD	 2
+			;#FBCNT	 1
+			;#WILD	 1
+			;#FILEN	 1
+			;#DIRF	 1
+			;#NDIRP	 2
+			;#DIRBF	 2
+			;	20
+	LD	C,20
+	LDIR
+	LD	A,(HL)	;#DSK
+	INC	HL
+	CALL	$$#CHGDRV
+	LD	DE,$$#FATPS
+			;#FATPS  2
+			;#DIRPS  2
+			;#FATBF  2
+			;#DTBUF  2
+			;	 8
+	LD	C,8
+	LDIR
+	LD	DE,$$#EXADR
+			;#EXADR  2
+			;#DTADR  2
+			;#SIZE	 2
+			;	 6
+	LD	C,6
+	LDIR
+	POP	HL
+	POP	DE
+	RET
+;
+STFILE:
+	PUSH	DE
+	PUSH	HL
+	LD	DE,_FILESD
+	OR	A
+	JR	Z,STF1
+	LD	DE,FILEDT2
+STF1:
+	LD	HL,($$#IBFAD)	;DIRENT.
+	LD	BC,33
+	LDIR
+;
+	LD	HL,$$#SIZEH	;#SIZEH
+	LD	C,2
+	LDIR
+;
+	LD	HL,$$#CLPS
+			;#CLPS	 2
+			;#GCAD	 2
+			;#GCLN	 2
+			;#GCEH	 1
+			;#CLLN	 1
+			;#FBPS	 2
+			;#FBAD	 2
+			;#FBCNT	 1
+			;#WILD	 1
+			;#FILEN	 1
+			;#DIRF	 1
+			;#NDIRP	 2
+			;#DIRBF	 2
+			;	20
+	LD	C,20
+	LDIR
+	LD	HL,$$#DSK
+			;#DSK	 1
+			;#FATPS  2
+			;#DIRPS  2
+			;#FATBF  2
+			;#DIRBF  2
+			;	 9
+	LD	C,9
+	LDIR
+;
+	LD	HL,$$#EXADR
+	LD	C,6
+			;#EXADR  2
+			;#DTADR  2
+			;#SIZE	 2
+			;	 6
+	LDIR
+	POP	HL
+	POP	DE
+	RET
+;
+_NROPEN::
+	LD	HL,($$#NOPEN+1)
+	PUSH	HL
+	LD	HL,($$#NOPENX+1)
+	LD	($$#NOPEN+1),HL
+	CALL	$$#NROPEN
+	POP	HL
+	LD	($$#NOPEN+1),HL
+	RET
+;
+_FILESR::
+	RET
+	PUSH	HL
+	LD	HL,(FATBF1)
+	LD	($$#FATBF),HL
+	LD	HL,(DTBUF1)
+	LD	($$#DTBUF),HL
+	LD	HL,(DIRBF0)
+	LD	($$#DIRBF),HL
+	LD	HL,(GCBUF1)
+	LD	($$#GCBUF),HL
+	LD	A,$C9
+	LD	(_FILESR),A
+	POP	HL
+	RET
+;
+;
+START:
+;
+	$END
+

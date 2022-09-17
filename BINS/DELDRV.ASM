@@ -1,0 +1,94 @@
+;
+;	DELDRV
+;
+	$INCLUDE	LA.DEF
+;
+	ORG	$3000
+;
+	PUSH	DE
+	CALL	#MPRNT
+	DB	$1A,"deldrv v1.00"
+	DB	" (C) 1994 by Larn M.R.",$0D
+	DB	0
+	POP	DE
+;
+	CALL	#SPSK
+	LD	A,(DE)
+	OR	A
+	LD	A,1
+	JR	Z,MAIN
+	CALL	#2HEX
+	JR	C,USAGE
+	CP	7
+	JR	NC,USAGE
+;
+MAIN:
+	LD	HL,(#MEMAX)
+;
+PRO1:
+	EX	AF,AF'
+	LD	DE,(#MEMAX1)
+	LD	A,H
+	AND	A
+	RET	Z
+	INC	A
+	RET	Z
+	PUSH	HL
+	SBC	HL,DE
+	POP	HL
+	RET	Z
+;
+	LD	A,(HL)
+	CP	'['
+	JR	NZ,NOTLA
+	INC	HL
+	LD	B,(HL)
+	LD	A,$1F
+	CP	B
+	JR	NC,PRON
+	DEC	HL
+	LD	B,5
+PRON:
+	PUSH	HL
+	LD	E,B
+	LD	D,0
+	ADD	HL,DE
+	INC	HL
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+	POP	HL
+	INC	HL
+PRO2:
+	LD	A,(HL)
+	INC	HL
+	CP	$20
+	CALL	NZ,#KYBFS
+	DJNZ	PRO2
+	LD	A,$20
+	CALL	#KYBFS
+	LD	A,"/"
+	CALL	#KYBFS
+	LD	A,"R"
+	CALL	#KYBFS
+	LD	A,$0D
+	CALL	#KYBFS
+	LD	A,(HL)
+	INC	HL
+	LD	H,(HL)
+	LD	L,A
+	EX	AF,AF'
+	DEC	A
+	JR	NZ,PRO1
+NOTLA:
+	AND	A
+	RET
+;
+USAGE:	CALL	#MPRNT
+	DB	"usage:",$0D
+	DB	" DELDRV [<¶²¼Þ®ÚÍÞÙ>]",$0D,$0D
+	DB	"¶²¼Þ®ÚÍÞÙ: 1-6",$0D
+	DB	0
+	AND	A
+	RET
+

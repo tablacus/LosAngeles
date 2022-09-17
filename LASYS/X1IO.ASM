@@ -1,0 +1,361 @@
+;
+;	L-os Angeles X1IO
+;
+POKEAT_:
+	EX	DE,HL
+POKEAT_1:
+	LD	A,(DE)
+	INC	DE
+	CALL	_POKE
+	INC	HL
+	DEC	BC
+	LD	A,B
+	OR	C
+	JR	NZ,POKEAT_1
+	RET
+;
+PEEKAT_:
+	EX	DE,HL
+PEEKAT_1:
+	CALL	_PEEK
+	INC	HL
+	LD	(DE),A
+	INC	DE
+	DEC	BC
+	LD	A,B
+	OR	C
+	JR	NZ,PEEKAT_1
+	RET
+;
+RDFAT:
+	PUSH	IY
+	CALL	RDFAT0
+	POP	IY
+	RET
+;
+TAB:
+	LD	A,(AT_XYADR)
+	SUB	B
+	CCF
+	RET	C
+;
+TAB1:
+	CALL	_PRNTS
+	INC	A
+	JR	NZ,TAB1
+	RET
+;
+CHGDRV:
+	PUSH	HL
+	PUSH	IY
+	CALL	CHGDRV0
+	LD	A,(_DSK)
+	POP	IY
+	POP	HL
+	RET
+;
+CHGDRV0:
+	CP	$40
+	RET	C
+	CALL	Z,_RDVSW
+;
+	LD	L,A
+	CALL	_DEVADX
+	RET	C
+;
+	CALL	_MOTOFF
+	LD	A,L
+	CALL	_CAP
+	LD	(_DSK),A
+;
+	DI
+	LD	(SPPAT2+1),SP
+;
+	LD	SP,IY
+;
+	POP	HL
+	POP	HL
+	LD	(_DRDC+1),HL
+;
+	POP	HL
+	LD	(_DWTC+1),HL
+;
+	POP	HL
+	LD	(CLSPAT+1),HL	;ADDCL
+;
+	POP	HL		;MAXCL
+	LD	A,L
+	LD	(CLPAT2+1),A
+	LD	A,H
+	LD	(CLPAT1+1),A
+;
+	POP	HL		;H=MAXDIR L=FDMODE
+	LD	A,L
+	OR	$FE
+	LD	(FDMODE+1),A
+	RLCA
+	LD	(FSPAT+1),A
+	LD	A,H
+	LD	(RTEPAT+1),A
+;
+	POP	HL
+	LD	A,L
+	LD	(_MXTRK),A
+	LD	A,H
+	LD	(_MSEC),A
+;
+	POP	HL
+	LD	H,0
+	LD	(_FATPS),HL
+;
+	POP	HL
+	LD	A,H
+	LD	(SECPAT+1),A
+	XOR	A		;CF=0 ノ タメ
+	LD	H,A
+	LD	(_DIRPS),HL
+;
+	POP	HL
+	LD	A,H
+	LD	(_DRIVE),A
+;
+	POP	HL
+	LD	(_MOTOFF+1),HL
+;
+	POP	HL
+	LD	(_GNCL+1),HL
+;
+	POP	HL
+	LD	(_SNCL+1),HL
+;
+SPPAT2:	LD	SP,0
+	EI
+	RET
+;
+XCSR:
+	LD	HL,(AT_XYADR)
+	RET
+;
+NL:
+	PUSH	AF
+	CALL	AT_NL
+	POP	AF
+	RET
+;
+COLOR:
+	LD	(AT_COLORF),A
+	RET
+;
+WIDCH:
+	CALL	AT_WIDCH
+	LD	A,(AT_WIDTH)
+	LD	(_WIDTH),A
+	RET
+;
+KYBFC:
+	PUSH	HL
+	LD	HL,0
+	LD	($0EA6),HL
+	POP	HL
+	RET
+;
+KYBFS:
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	LD	BC,$0EA8
+	LD	E,A
+	CALL	AT_KYBFS
+	XOR	A
+	LD	($0EA5),A
+	POP	HL
+	POP	DE
+	POP	BC
+	RET
+;
+POKE:
+	PUSH	BC
+	PUSH	AF
+	LD	C,L
+	LD	A,H
+	ADD	A,$40
+	LD	B,A
+	POP	AF
+	OUT	(C),A
+	POP	BC
+	RET
+;
+PEEK:
+	PUSH	BC
+	LD	C,L
+	LD	A,H
+	ADD	A,$40
+	LD	B,A
+	IN	A,(C)
+	POP	BC
+	RET
+;
+CINIT:
+	LD	A,(_WK1FD0)
+	RES	4,A
+;
+S1FD0:
+	PUSH	BC
+	LD	BC,$1FD0
+	OUT	(C),A
+	LD	(_WK1FD0),A
+	POP	BC
+	RET
+;
+SEEK:
+	LD	B,16
+	LD	A,(_MSEC)
+	LD	C,A
+	XOR	A
+	EX	DE,HL
+DIV1:
+	ADD	HL,HL
+	ADC	A,A
+	CP	C
+	JR	C,DIV2
+	SUB	C
+	INC	L
+DIV2:
+	DJNZ	DIV1
+;
+SECPAT:	ADD	A,$01		;書き換え
+	LD	D,L	;商(TRACK)
+DIV3:
+	LD	E,A	;余り
+	SRL	D	;CYLINDER
+	SBC	A,A
+	AND	$10	;SIDE
+	LD	C,A
+;
+	LD	A,(_DRIVE)
+	CP	4
+	CCF
+	RET	C
+	OR	C
+	LD	(MOPAT+1),A	;モーターオフデータ
+	LD	BC,$0FFC
+	OR	$80		;モーターオン
+	OUT	(C),A
+;
+	CALL	SETMODE
+	RET	C
+;
+	LD	HL,(_DRIVE)
+	LD	H,$1F
+	LD	A,(HL)		;LD A,$1F00+DRIVE NUMBER
+	INC	A		;A=$FF シリンダフメイ
+	CALL	Z,FDCRES	;リストア
+	LD	A,(HL)
+	LD	C,$F9
+	OUT	(C),A		;現在のシリンダ
+	SUB	D
+	RET	Z		;シーク無し
+;
+	LD	A,(_ISEC)
+	LD	C,A
+;
+	LD	A,(_MXTRK)	;マックスシリンダ
+	DEC	A
+	CP	D		;オーバーシリンダ
+	RET	C
+;
+	CP	C		;内蔵 2DD の為の処理
+	JR	C,SETM2
+	LD	A,B		;B=$0F
+	IN	A,($FE)		;2HD mode for 2DD seek
+SETM2:
+	LD	A,B
+	IN	A,($FD)		;MFM mode
+;
+	CALL	DELAY0		;wait100マイクロSEC
+;
+	LD	C,$FB
+	OUT	(C),D
+	LD	(HL),D
+	LD	C,$18		;シーク
+FDCCMD2:
+	LD	A,(_SEEKSP)
+FSPAT:	AND	$FF
+	OR	C
+;
+FDCCMD:
+	CALL	COMSET
+;
+C_FDCPAT:LD	A,(FDCPAT+1)
+	AND	$20		;ライト・データ ライト・トラック
+	INC	A
+;
+SST:
+	LD	C,0
+SST1:
+	DEC	C		; 4
+	JR	NZ,SST1		;12 *256 /4 =約 1ms
+	DEC	A
+	JR	NZ,SST1
+;
+	INC	A
+	CALL	READY
+SETMODE:
+	LD	A,B		;B=$0F
+FDMODE:	IN	A,($FF)		;フロッピーモード(2D/2HD)カキカエ
+;
+	LD	A,B
+	IN	A,($FD)		;MFM mode
+;
+	CALL	DELAY0		;ヘッドセレクトタイム
+	LD	A,$81
+READY:
+	LD	(WAITA+1),A
+	PUSH	HL
+	LD	C,$F8
+	LD	H,C
+READY2:
+	IN	A,(C)
+WAITA:	AND	$81		;NOT READY,BUSY
+	JR	Z,READYE
+	EX	(SP),HL		;wait
+	EX	(SP),HL		; //
+	DEC	HL
+	LD	A,H
+	OR	L
+	JR	NZ,READY2
+	SCF
+READYE:
+	POP	HL
+	RET
+;
+FDCRES:
+	LD	(HL),A		;A=0
+	LD	C,A
+	JR	FDCCMD2
+;
+SECSET:
+	LD	BC,$0FFA
+	OUT	(C),E
+COMSET:
+	LD	C,$F8
+	OUT	(C),A
+DELAY0:
+	LD	A,26
+DELAY:
+	DEC	A
+	JR	NZ,DELAY
+	RET
+;
+FDMOFF:
+	PUSH	AF
+	PUSH	BC
+	LD	BC,$0FFC	;モーターオフ
+MOPAT:	LD	A,$00		;カキカエ
+	OUT	(C),A
+	POP	BC
+	POP	AF
+	RET
+;
+RETRY:	DB	5
+;

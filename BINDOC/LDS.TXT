@@ -1,0 +1,25 @@
+・L-os Angeles外部コマンド
+
+●LDS		LSX-Dodgersの起動
+
+●書式
+
+ LDS [EMM領域番号(0~FF)]
+
+●解説
+
+　L-os AngelesからLSX-Dodgersを起動します。
+　常駐物が多くLD.BINが実行できない時に使用して下さい。
+　LSX-DodgersのカレントドライブはL-os Angelesのカレントドライブとなります。
+　また、EMMの領域番号を指定することができます。
+
+
+●注意
+
+　"LDS.BIN"と同じディレクトリに "LD.BIN" が必要です。
+
+
+●History
+
+1.00	1996. 4. 8	新規作成
+

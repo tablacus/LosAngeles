@@ -1,0 +1,191 @@
+;
+;	VC
+;
+	$INCLUDE	LA.DEF
+;
+@CLS0	EQU	$0A8F
+;
+	ORG	$3000
+;
+	LD	HL,RESOL
+	CALL	RESO
+	CALL	#MPRNT
+	DB	12
+	DB	"video capture 10 v1.01 Lovers",$0D
+	DB	"R....record",$0D
+	DB	"P....play",$0D
+	DB	"0-9..display",$0D
+	DB	"C....clear",$0D
+	DB	"ESC..quit"
+	DB	0
+;
+MAIN:
+	CALL	#KYBFC
+	CALL	#FLGET
+	CALL	#CAP
+	CP	$1B
+	JP	Z,#LTNL		;QUIT
+	CP	"C"
+	JP	Z,CLEAR
+	CP	"R"
+	JP	Z,RECORD
+	CP	"P"
+	JP	Z,PLAY
+	SUB	"0"
+	JR	C,MAIN
+	CP	10
+	JR	NC,MAIN
+	JP	DISPLAY
+;
+CLEAR:
+	LD	A,(#WK1FD0)
+	SET	4,A
+	CALL	#S1FD0
+	PUSH	AF
+	CALL	@CLS0
+	POP	AF
+	RES	4,A
+	CALL	#S1FD0
+	CALL	@CLS0
+	JP	MAIN
+;
+RECORD:
+	LD	BC,$0D00	;EMM
+	XOR	A
+	OUT	(C),C
+	INC	C
+	OUT	(C),A
+	INC	C
+	OUT	(C),A
+	LD	A,(#WK1FD0)
+	RES	4,A
+	LD	D,A
+	SET	4,A
+	LD	E,A
+;
+	LD	BC,$1FB0
+	LD	A,$80
+	OUT	(C),A
+	LD	C,$C1
+	LD	A,40
+	OUT	(C),A
+
+	LD	A,10		;LOOP
+RECORD1:
+	EX	AF,AF'
+	LD	BC,$1FB0
+	LD	A,$88
+	OUT	(C),A		;VIDEO CAPTURE
+	LD	A,$80
+	OUT	(C),A
+;
+	LD	C,$D0
+	OUT	(C),E		;BANK1
+;
+	LD	A,15
+	CALL	SETDMA
+;
+	LD	C,$D0
+	OUT	(C),D		;BANK0
+;
+	LD	A,15
+	CALL	SETDMA
+;
+	EX	AF,AF'
+	DEC	A
+	JP	NZ,RECORD1
+	JP	MAIN
+;
+PLAY:
+	LD	BC,$0D00	;EMM
+	XOR	A
+	OUT	(C),C
+	INC	C
+	OUT	(C),A
+	INC	C
+	OUT	(C),A
+	LD	A,(#WK1FD0)
+	RES	4,A
+	LD	D,A
+	SET	4,A
+	LD	E,A
+;
+	LD	A,10		;LOOP
+PLAY1:
+	EX	AF,AF'
+	CALL	DISSUB
+	EX	AF,AF'
+	DEC	A
+	JR	NZ,PLAY1
+	JP	MAIN
+;
+DISPLAY:
+	LD	HL,-384
+	LD	BC,384
+	INC	A
+DIS1:
+	ADD	HL,BC
+	DEC	A
+	JR	NZ,DIS1
+;
+	LD	BC,$D00
+	OUT	(C),C
+	INC	C
+	OUT	(C),L
+	INC	C
+	OUT	(C),H
+;
+	LD	A,(#WK1FD0)
+	RES	4,A
+	LD	D,A
+	SET	4,A
+	LD	E,A
+;
+	LD	BC,$1FB0
+	LD	A,$80
+;
+	CALL	DISSUB
+	JP	MAIN
+DISSUB:
+	LD	C,$D0
+	OUT	(C),E		;BANK1
+;
+	LD	A,13
+	CALL	SETDMA
+;
+	LD	C,$D0
+	OUT	(C),D		;BANK0
+;
+	LD	A,13
+	JP	SETDMA
+;
+SETDMA:
+	LD	BC,$1F87
+	LD	HL,DMAD
+SETDMA1:
+	INC	B
+	OUTI
+	DEC	A
+	JR	NZ,SETDMA1
+;
+	OUT	(C),C
+	RET
+;
+RESO:
+	LD	DE,$00DD
+	LD	BC,20
+	LDIR
+	LD	A,(HL)
+	CALL	#S1FD0
+	CALL	$09A1
+	LD	A,40
+	JP	#WIDCH
+;
+DMAD:	DB	$C3,$7D,$03,$0D,$FF,$BF,$2C,$18
+	DB	$9A,$AD,$00,$40,$CF,$01,$CF
+;
+RESOL:	DB	$37,$28,$2D,$34,$1F,$02,$19,$1C
+	DB	$00,$07,$00,$00,$00,$00,$00,$00
+	DB	$6F,$50,$59,$38,$00
+;
+
