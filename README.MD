@@ -16,7 +16,7 @@
 
 - L-os Angeles
 1. LA.SYS(X1版)
-2. LAE,COM(MSX-DOS版)
+2. LAE.COM(MSX-DOS版)
 
 
 # 対応環境
