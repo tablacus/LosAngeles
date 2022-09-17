@@ -3136,7 +3136,7 @@
 0018A9 19A9 3A4A1F          13      LD  A,(_LVER+1)
 0018AC 19AC CDC11F          17      CALL    _PRTHX
 0018AF 19AF CDE21F          17      CALL    _MPRNT
-0018B2 19B2 A547616B7520284C        DB  $A5,"Gaku (Lovers/Tablacus)",13
+0018B2 19B2 2047616B7520284C        DB  " Gaku (Lovers/Tablacus)",13
             6F766572732F5461    
             626C61637573290D    
 0018CA 19CA 4F6B0D00                DB  "Ok",$0D,0

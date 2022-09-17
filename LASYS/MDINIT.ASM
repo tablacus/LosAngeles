@@ -86,7 +86,7 @@ INIT2:
 	LD	A,(_LVER+1)
 	CALL	_PRTHX
 	CALL	_MPRNT
-	DB	$A5,"Gaku (Lovers/Tablacus)",13
+	DB	" Gaku (Lovers/Tablacus)",13
 	DB	"Ok",$0D,0
 ;
 	CALL	INIDPB
