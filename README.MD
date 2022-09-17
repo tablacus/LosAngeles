@@ -1,12 +1,12 @@
    L-os Angeles Gaku (Tablacus/Lovers)  
    Ok  
    ;         A:LA      .SYS	X1版　L-os Angeles  
-   ;         A:LA      .   	LAの外部コマンド  
-   ;         A:LADOC   .   	LAの解説  
-   ;         A:BINDOC  .   	LAの外部コマンドの解説  
-   ;         A:LASYS   .   	LAのソースリスト  
-   ;         A:BINS    .   	LAの外部コマンドのソースリスト  
-   ;         A:LAIPL   .   	IPLのソースリスト  
+   ;         [A:LA      .   	LAの外部コマンド](https://github.com/tablacus/LosAngeles/tree/main/LA)  
+   ;         [A:LADOC   .   	LAの解説](https://github.com/tablacus/LosAngeles/tree/main/LADOC)  
+   ;         [A:BINDOC  .   	LAの外部コマンドの解説](https://github.com/tablacus/LosAngeles/tree/main/BINDOC)  
+   ;         [A:LASYS   .   	LAのソースリスト](https://github.com/tablacus/LosAngeles/tree/main/LASYS)  
+   ;         [A:BINS    .   	LAの外部コマンドのソースリスト](https://github.com/tablacus/LosAngeles/tree/main/BINS)  
+   ;         [A:LAIPL   .   	IPLのソースリスト](https://github.com/tablacus/LosAngeles/tree/main/LAIPL)  
    ;         A:COMMAND .BAT	LAの自動実行ファイル  
    ;         A:LA      .COM	X1・C-DOSII等からLAを起動させるコマンド  
    ;         A:LAE     .COM	MSX-DOS版　L-os Angeles  
