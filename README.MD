@@ -11,7 +11,6 @@
    ;         A:LA      .COM	X1・C-DOSII等からLAを起動させるコマンド  
    ;         [A:LAE     .COM	MSX-DOS版　L-os Angeles](https://github.com/tablacus/LosAngeles/releases)  
 
-
 # プログラム名	
 
 - L-os Angeles
@@ -46,6 +45,9 @@
 
 - MIT Licenseのフリーソフトウェアです。
 		
+# 簡単なサンプルプログラム
+
+https://github.com/tablacus/LosAngeles/wiki
 
 
 # 管理等
